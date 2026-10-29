@@ -34,7 +34,7 @@ public sealed class AcceptanceScriptPathTests : IDisposable
 
         var result = RunInvoker(script, child, captured);
 
-        Assert.Equal(17, result.ExitCode);
+        Assert.True(result.ExitCode == 17, result.Output);
         Assert.Equal("argument containing spaces", File.ReadAllText(captured));
     }
 
@@ -294,7 +294,9 @@ public sealed class AcceptanceScriptPathTests : IDisposable
                     if ($null -eq $definition) { exit 4 }
                     Invoke-Expression $definition.Extent.Text
                 }
-                $arguments = @('-NoProfile', '-NonInteractive', '-File', $env:GD_TEST_CHILD, 'argument containing spaces')
+                # 子脚本由测试生成；允许它运行才能检验包装器的退出码和参数。
+                $arguments = @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+                    '-File', $env:GD_TEST_CHILD, 'argument containing spaces')
                 exit [int](Invoke-WaitingProcess -FilePath 'powershell.exe' -Arguments $arguments)
             } catch { [Console]::Error.WriteLine($_); exit 3 }
             """;

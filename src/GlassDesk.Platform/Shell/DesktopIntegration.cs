@@ -36,6 +36,26 @@ public static class TaskbarSettingsLink
         try { Process.Start(new ProcessStartInfo("ms-settings:taskbar") { UseShellExecute = true }); error = null; return true; }
         catch (Exception ex) { error = ex.Message; return false; }
     }
+
+    /// <summary>打开 Windows 的系统透明效果设置，不直接修改 Explorer。</summary>
+    public static bool OpenColors(out string? error)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(
+                "ms-settings:personalization-colors")
+            {
+                UseShellExecute = true,
+            });
+            error = null;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
 }
 /// <summary>Never hides, moves or restarts the system taskbar.</summary>
 public static class TaskbarEdgeInterception

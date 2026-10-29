@@ -18,7 +18,7 @@ public sealed class LayoutStore
 {
     private readonly JsonFileStore<DockLayout> _dockStore;
     private readonly JsonFileStore<LauncherLayout> _launcherStore;
-    private List<string> _lastSavedDockPins = [];
+    private DockLayout _lastSavedDock = new();
     private LauncherLayout _lastSavedLauncher = new();
 
     public LayoutStore(string dockLayoutPath, string launcherLayoutPath, TimeProvider? timeProvider = null)
@@ -49,7 +49,12 @@ public sealed class LayoutStore
         var outcome = _dockStore.Load(static () => new DockLayout());
         Dock = outcome.Value;
         Dock.PinnedItemIds ??= [];
-        _lastSavedDockPins = [.. Dock.PinnedItemIds];
+        Dock.ToolGroups ??= [];
+        foreach (var group in Dock.ToolGroups)
+        {
+            group.ItemIds ??= [];
+        }
+        _lastSavedDock = CloneDock(Dock);
         return outcome;
     }
 
@@ -69,16 +74,28 @@ public sealed class LayoutStore
         try
         {
             _dockStore.Save(Dock);
-            _lastSavedDockPins = [.. Dock.PinnedItemIds];
+            _lastSavedDock = CloneDock(Dock);
         }
         catch
         {
             // Callers mutate the shared Dock object before saving. If the write fails,
-            // leave every later reader with the last known persisted order.
-            Dock.PinnedItemIds = [.. _lastSavedDockPins];
+            // 保存失败时同时恢复固定项和工具栏，避免内存与磁盘内容分叉。
+            Dock.PinnedItemIds = [.. _lastSavedDock.PinnedItemIds];
+            Dock.ToolGroups = CloneDock(_lastSavedDock).ToolGroups;
             throw;
         }
     }
+
+    private static DockLayout CloneDock(DockLayout source) => new()
+    {
+        PinnedItemIds = [.. source.PinnedItemIds],
+        ToolGroups = source.ToolGroups.Select(group => new DockToolGroup
+        {
+            Id = group.Id,
+            Name = group.Name,
+            ItemIds = [.. group.ItemIds],
+        }).ToList(),
+    };
 
     /// <exception cref="StorageException">文件无法写入。</exception>
     public void SaveLauncher()
@@ -145,6 +162,14 @@ public sealed class LayoutStore
         {
             removed++;
         }
+
+        foreach (var group in Dock.ToolGroups)
+        {
+            removed += group.ItemIds.RemoveAll(id =>
+                string.Equals(id, itemId, StringComparison.Ordinal));
+        }
+
+        removed += Dock.ToolGroups.RemoveAll(group => group.ItemIds.Count == 0);
 
         foreach (var page in Launcher.Pages)
         {

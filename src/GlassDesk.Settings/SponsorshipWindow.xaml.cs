@@ -15,7 +15,7 @@ public partial class SponsorshipWindow : GlassWindow
     {
         InitializeComponent();
         var method = useWechat ? "微信支付" : "支付宝";
-        Title = method + "赞助";
+        Title = method + "赞助本修改版维护者";
         AutomationProperties.SetName(this, Title);
         SponsorDialogHeading.Text = Title;
         SponsorCodeImage.Source = code;

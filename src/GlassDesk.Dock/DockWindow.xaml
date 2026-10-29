@@ -101,6 +101,23 @@
             </Canvas>
           </Viewbox>
         </Button>
+        <Button x:Name="ToolboxButton" Width="48" Height="64"
+                Margin="0,0,8,0" Padding="0"
+                Style="{StaticResource DockEntryButton}"
+                ToolTip="软件聚合工具栏" AutomationProperties.Name="打开软件聚合工具栏"
+                MouseEnter="OnEntryMouseEnter" MouseLeave="OnEntryMouseLeave"
+                Click="OnToolboxButtonClick">
+          <Viewbox x:Name="ToolboxTile" Width="48" Height="48"
+                   HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Canvas Width="48" Height="48">
+              <Path Data="M7,7 H20 V20 H7 Z M28,7 H41 V20 H28 Z
+                          M7,28 H20 V41 H7 Z M28,28 H41 V41 H28 Z"
+                    Fill="Transparent"
+                    Stroke="{Binding DockBuiltinIconBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                    StrokeThickness="2.5" StrokeLineJoin="Round" />
+            </Canvas>
+          </Viewbox>
+        </Button>
         <ContentControl x:Name="TileStripHost"
                         AutomationProperties.Name="固定的应用"
                         Focusable="False" />

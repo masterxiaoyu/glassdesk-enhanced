@@ -71,7 +71,7 @@ public sealed class ShortcutSettings
 
     public HotkeyDefinition ToggleDesktopIcons { get; set; } = new();
 
-    /// <summary>切换 Dock 被遮挡时的鼠标唤出锁；开启后禁止唤出，关闭后允许鼠标移到 Dock 原位置唤出。</summary>
+    /// <summary>切换全屏期间的 Dock 唤出锁；普通窗口遮挡时始终禁止悬停唤出。</summary>
     public HotkeyDefinition ToggleDockRevealLock { get; set; } = new();
 
     /// <summary>

@@ -12,4 +12,17 @@ public sealed class DockLayout
     /// 删掉了该应用，Dock 只需相应缩短。
     /// </summary>
     public List<string> PinnedItemIds { get; set; } = [];
+
+    /// <summary>Dock 工具栏中的自定义软件聚合，按显示顺序保存。</summary>
+    public List<DockToolGroup> ToolGroups { get; set; } = [];
+}
+
+/// <summary>一组由用户选择的应用库条目，不复制软件路径或图标。</summary>
+public sealed class DockToolGroup
+{
+    public string Id { get; set; } = string.Empty;
+
+    public string Name { get; set; } = string.Empty;
+
+    public List<string> ItemIds { get; set; } = [];
 }

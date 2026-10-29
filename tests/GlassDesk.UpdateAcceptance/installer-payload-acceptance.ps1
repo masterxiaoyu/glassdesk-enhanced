@@ -3,41 +3,56 @@
 param(
     [Parameter(Mandatory=$true)][string]$OldPayload,
     [Parameter(Mandatory=$true)][string]$NewPayload,
-    [Parameter(Mandatory=$true)][string]$OutputDirectory
+    [Parameter(Mandatory=$true)][string]$OutputDirectory,
+    [Parameter(Mandatory=$true)][string]$InnoCompilerPath
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $root = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $root) { throw 'Use a new acceptance directory.' }
 $null = New-Item -ItemType Directory -Path $root
-$compiler = 'D:\Toolchains\InnoSetup-7.1.0-x64\Compiler\ISCC.exe'
+$compiler = $InnoCompilerPath
 $identity = 'GD.Payload.' + [guid]::NewGuid().ToString('N')
 $liveKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\GlassDesk.Independent_is1'
 function LiveRegistration {
+    if (-not (Test-Path -LiteralPath $liveKey)) { return 'absent' }
     Get-ItemProperty -LiteralPath $liveKey | Select-Object InstallLocation,DisplayVersion,UninstallString | ConvertTo-Json -Compress
 }
 $before = LiveRegistration
 $dataBefore = @{}
-$liveDirectory = (Get-ItemProperty -LiteralPath $liveKey).InstallLocation
-Get-ChildItem -LiteralPath (Join-Path $liveDirectory 'Data') -File -Recurse | ForEach-Object { $dataBefore[$_.FullName] = (Get-FileHash -LiteralPath $_.FullName).Hash }
-$iss = (Get-Content -LiteralPath (Join-Path $repo 'packaging/GlassDesk-Capture.iss') -Raw).
+if ($before -ne 'absent') {
+    # 只有真实安装登记存在时，才核对它的数据在隔离验收前后不变。
+    $liveDirectory = (Get-ItemProperty -LiteralPath $liveKey).InstallLocation
+    $liveData = Join-Path $liveDirectory 'Data'
+    if (Test-Path -LiteralPath $liveData) {
+        Get-ChildItem -LiteralPath $liveData -File -Recurse | ForEach-Object {
+            $dataBefore[$_.FullName] = (Get-FileHash -LiteralPath $_.FullName).Hash
+        }
+    }
+}
+$iss = (Get-Content -LiteralPath (Join-Path $repo 'packaging/GlassDesk-Capture.iss') -Raw -Encoding UTF8).
     Replace('AppIdValue != "GlassDesk.Independent"', 'AppIdValue != "' + $identity + '"').
     Replace('SetupIconFile=..\src\GlassDesk.App\Assets\GlassDesk.ico', 'SetupIconFile=' + (Join-Path $repo 'src/GlassDesk.App/Assets/GlassDesk.ico')).
     Replace('Name: "{autoprograms}\GlassDesk"', 'Name: "{autoprograms}\' + $identity + '"').
     Replace('Name: "{autodesktop}\GlassDesk"', 'Name: "{autodesktop}\' + $identity + '"')
 $issPath = Join-Path $root 'isolated.iss'
 $iss | Set-Content -LiteralPath $issPath -Encoding utf8
+Copy-Item -LiteralPath (Join-Path $repo 'packaging/INSTALLER-NOTICE.txt') `
+    -Destination (Join-Path $root 'INSTALLER-NOTICE.txt')
 $installed = Join-Path $root 'Installed App'
 $prior = $env:GLASSDESK_PACKAGE_STAGE
 $checks = @()
 $passed = $false
-$oldVersion = ([version][Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $OldPayload 'GlassDesk.dll')).FileVersion).ToString(3)
-$newVersion = ([version][Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $NewPayload 'GlassDesk.dll')).FileVersion).ToString(3)
+$oldFileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $OldPayload 'GlassDesk.dll')).FileVersion
+$newFileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $NewPayload 'GlassDesk.dll')).FileVersion
+$oldVersion = ([version]$oldFileVersion).ToString(3)
+$newVersion = ([version]$newFileVersion).ToString(3)
 function RunInstaller([string]$File, [string]$Log) {
     $info = [Diagnostics.ProcessStartInfo]::new($File)
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true
-    foreach ($a in @('/SP-','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR=' + $installed),('/LOG=' + $Log))) { $info.ArgumentList.Add($a) }
+    $info.Arguments = '/SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="' +
+        $installed + '" /LOG="' + $Log + '"'
     $p = [Diagnostics.Process]::Start($info)
     if (-not $p.WaitForExit(60000)) { throw 'Isolated installer timed out.' }
     try { if ($p.ExitCode -ne 0) { throw "Isolated installer failed: $($p.ExitCode)" } } finally { $p.Dispose() }
@@ -45,11 +60,12 @@ function RunInstaller([string]$File, [string]$Log) {
 try {
     foreach ($entry in @(@{version=$oldVersion; payload=$OldPayload}, @{version=$newVersion; payload=$NewPayload})) {
         $env:GLASSDESK_PACKAGE_STAGE = (Resolve-Path -LiteralPath $entry.payload).Path
-        & $compiler "/DAppIdValue=$identity" "/DProductVersion=$($entry.version)" "/DFileVersion=$($entry.version).0" "/DPackageBaseName=Test-$($entry.version)" "/O$root" $issPath *> (Join-Path $root "compile-$($entry.version).log")
+        $fileVersion = if ($entry.version -eq $oldVersion) { $oldFileVersion } else { $newFileVersion }
+        & $compiler "/DAppIdValue=$identity" "/DProductVersion=$($entry.version)" "/DFileVersion=$fileVersion" "/DPackageBaseName=Test-$($entry.version)" "/O$root" $issPath *> (Join-Path $root "compile-$($entry.version).log")
         if ($LASTEXITCODE -ne 0) { throw 'Isolated payload compilation failed.' }
     }
     RunInstaller (Join-Path $root "Test-$oldVersion-Setup.exe") (Join-Path $root 'install-old.log')
-    if ([Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $installed 'GlassDesk.dll')).FileVersion -ne "$oldVersion.0") { throw 'Old product was not installed.' }
+    if ([Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $installed 'GlassDesk.dll')).FileVersion -ne $oldFileVersion) { throw 'Old product was not installed.' }
     $checks += "Actual $oldVersion payload installs in the isolated directory"
     $data = Join-Path $installed 'Data'
     $null = New-Item -ItemType Directory -Path (Join-Path $data 'icons') -Force
@@ -58,8 +74,9 @@ try {
     $ownedData = @{}
     Get-ChildItem -LiteralPath $data -File -Recurse | ForEach-Object { $ownedData[$_.FullName] = (Get-FileHash -LiteralPath $_.FullName).Hash }
     RunInstaller (Join-Path $root "Test-$newVersion-Setup.exe") (Join-Path $root 'install-update.log')
+    $newPayloadPrefix = (Resolve-Path -LiteralPath $NewPayload).Path.TrimEnd('\') + '\'
     foreach ($file in Get-ChildItem -LiteralPath $NewPayload -File -Recurse) {
-        $relative = [IO.Path]::GetRelativePath((Resolve-Path -LiteralPath $NewPayload).Path, $file.FullName)
+        $relative = $file.FullName.Substring($newPayloadPrefix.Length)
         if ((Get-FileHash -LiteralPath $file.FullName).Hash -ne (Get-FileHash -LiteralPath (Join-Path $installed $relative)).Hash) { throw "Installed bytes differ: $relative" }
     }
     foreach ($name in $ownedData.Keys) { if ((Get-FileHash -LiteralPath $name).Hash -ne $ownedData[$name]) { throw 'Upgrade modified existing data.' } }
@@ -76,7 +93,7 @@ try {
         $cleanup = [Diagnostics.ProcessStartInfo]::new($uninstaller)
         $cleanup.UseShellExecute = $false
         $cleanup.CreateNoWindow = $true
-        foreach ($a in @('/VERYSILENT','/NORESTART','/SUPPRESSMSGBOXES')) { $cleanup.ArgumentList.Add($a) }
+        $cleanup.Arguments = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES'
         $p = [Diagnostics.Process]::Start($cleanup)
         try { if (-not $p.WaitForExit(60000) -or $p.ExitCode -ne 0) { throw 'Isolated uninstall failed.' } } finally { $p.Dispose() }
     }

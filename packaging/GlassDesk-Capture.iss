@@ -39,7 +39,12 @@ MinVersion=10.0.22000
 UninstallDisplayName=GlassDesk
 UninstallDisplayIcon={app}\GlassDesk.exe
 SetupIconFile=..\src\GlassDesk.App\Assets\GlassDesk.ico
-AppPublisher=GlassDesk
+AppPublisher=masterxiaoyu（GlassDesk 非官方修改版）
+AppPublisherURL=https://github.com/masterxiaoyu/glassdesk-enhanced
+AppSupportURL=https://github.com/masterxiaoyu/glassdesk-enhanced/issues
+AppUpdatesURL=https://github.com/masterxiaoyu/glassdesk-enhanced/releases
+AppComments=非官方修改版。原作者 everlosttime；原项目 https://github.com/everlosttime/glassdesk-open-source
+InfoBeforeFile=INSTALLER-NOTICE.txt
 VersionInfoProductName=GlassDesk
 VersionInfoProductVersion={#FileVersion}
 VersionInfoVersion={#FileVersion}
@@ -71,6 +76,49 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\{#AppId
 Filename: "{app}\GlassDesk.exe"; Parameters: "--autostart"; WorkingDir: "{app}"; Flags: nowait runasoriginaluser; Check: IsGlassDeskUpdate
 
 [Code]
+var
+  DataPage: TInputOptionWizardPage;
+  DeleteDataOnUninstall: Boolean;
+
+procedure InitializeWizard;
+begin
+  DataPage := CreateInputOptionPage(wpSelectDir, '保留用户数据',
+    '选择如何处理已有的 GlassDesk Data',
+    'Data 包含设置、应用库和布局；首次安装时此选项不产生影响。',
+    True, False);
+  DataPage.Add('保留已有 Data（推荐）');
+  DataPage.Add('清除已有 Data（设置、应用库和布局将永久删除）');
+  DataPage.SelectedValueIndex := 0;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  // 只有用户在向导中明确选择清除，才删除当前安装目录的 Data。
+  if CurStep <> ssInstall then Exit;
+  if WizardSilent then Exit;
+  if DataPage.SelectedValueIndex <> 1 then Exit;
+  if DirExists(ExpandConstant('{app}\Data')) then
+    if not DelTree(ExpandConstant('{app}\Data'), True, True, True) then
+      RaiseException('无法清除旧 Data；安装已中止。');
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+  begin
+    // 静默卸载默认保留；交互卸载只有选“是”才会清除 Data。
+    if not UninstallSilent then
+      DeleteDataOnUninstall :=
+        MsgBox('是否同时永久删除 GlassDesk Data（设置、应用库和布局）？' + #13#10 +
+          '选择“否”会保留 Data。', mbConfirmation,
+          MB_YESNO or MB_DEFBUTTON2) = IDYES;
+  end;
+  if (CurUninstallStep = usPostUninstall) and DeleteDataOnUninstall then
+    if DirExists(ExpandConstant('{app}\Data')) then
+      if not DelTree(ExpandConstant('{app}\Data'), True, True, True) then
+        MsgBox('卸载已完成，但 Data 未能清除。', mbError, MB_OK);
+end;
+
 function IsGlassDeskUpdate: Boolean;
 begin
   Result := ExpandConstant('{param:GLASSDESKUPDATE|0}') = '1';

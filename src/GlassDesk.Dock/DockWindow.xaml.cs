@@ -517,14 +517,16 @@ public partial class DockWindow : GlassWindow
         LauncherButton.Visibility = settings.ShowLauncherEntry ? Visibility.Visible : Visibility.Collapsed;
         ThisPcButton.Visibility = settings.ShowThisPcEntry ? Visibility.Visible : Visibility.Collapsed;
         DesktopIconsButton.Visibility = settings.ShowDesktopIconsEntry ? Visibility.Visible : Visibility.Collapsed;
-        foreach (var button in new[] { LauncherButton, ThisPcButton, DesktopIconsButton })
+        foreach (var button in new[] { LauncherButton, ThisPcButton,
+            DesktopIconsButton, ToolboxButton })
         {
             button.Width = 48 * scale;
             button.Height = 64 * scale;
             button.Margin = new Thickness(0, 0, 8 * scale, 0);
         }
         LaunchpadTile.Width = LaunchpadTile.Height = ThisPcTile.Width = ThisPcTile.Height
-            = DesktopIconsTile.Width = DesktopIconsTile.Height = 48 * scale;
+            = DesktopIconsTile.Width = DesktopIconsTile.Height
+            = ToolboxTile.Width = ToolboxTile.Height = 48 * scale;
         LaunchpadTile.CornerRadius = new CornerRadius(16 * scale);
         PanelCornerRadius = new CornerRadius(40 * scale);
 
@@ -546,7 +548,7 @@ public partial class DockWindow : GlassWindow
     private double DockScale => double.IsFinite(Settings.SizeScale)
         ? Math.Clamp(Settings.SizeScale, DockSettings.MinimumSizeScale, DockSettings.MaximumSizeScale) : 1;
 
-    private double BuiltinEntryWidthDip => 56 * ((Settings.ShowLauncherEntry ? 1 : 0)
+    private double BuiltinEntryWidthDip => 56 * (1 + (Settings.ShowLauncherEntry ? 1 : 0)
         + (Settings.ShowThisPcEntry ? 1 : 0) + (Settings.ShowDesktopIconsEntry ? 1 : 0));
 
     private double ResolveEffectiveFrameLengthDip(double requested, DisplayInfo? display)
@@ -1485,7 +1487,9 @@ public partial class DockWindow : GlassWindow
         }
         else if (fullscreen || covered)
         {
-            if (_revealLocked)
+            // 前台软件盖住 Dock 时，悬停不能把 Dock 抢到软件上方。
+            // 唤出锁只控制未被窗口覆盖的全屏状态。
+            if (covered || _revealLocked)
             {
                 _edgeRevealedDuringSuppression = false;
                 _autoHide.ForceHide(now);
@@ -1540,7 +1544,7 @@ public partial class DockWindow : GlassWindow
             : new PixelRect(left, top, right - left, bottom - top);
     }
 
-    /// <summary>切换本次运行期间的遮挡唤出锁；不影响未被覆盖的 Dock。</summary>
+    /// <summary>切换本次运行期间的全屏唤出锁；不影响普通窗口遮挡规则。</summary>
     public void ToggleRevealLock()
     {
         _revealLocked = !_revealLocked;

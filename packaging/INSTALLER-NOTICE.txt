@@ -1,0 +1,15 @@
+GlassDesk 非官方修改版说明
+
+本安装包基于 GlassDesk 1.4.0 源码制作，并加入本地功能及修复。
+原作者：everlosttime
+原产品地址：https://github.com/everlosttime/glassdesk
+原项目地址：https://github.com/everlosttime/glassdesk-open-source
+
+本修改版并非原作者发布或背书。软件功能免费，赞助完全自愿。
+本版发布者：masterxiaoyu
+本版仓库：https://github.com/masterxiaoyu/glassdesk-enhanced
+使用与再分发请遵守随包附带的 LICENSE.txt、NOTICE.txt 及第三方许可资料。
+
+升级安装会替换程序文件。已有 Data 默认保留；若在安装向导中明确选择
+“清除已有 Data”，安装目录下的设置、应用库和布局将永久删除。
+卸载时也可选择保留或删除 Data；静默安装及静默卸载默认保留。

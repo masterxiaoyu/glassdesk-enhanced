@@ -14,8 +14,8 @@ namespace GlassDesk.Dock.Tests;
 public class SponsorshipSettingsTests
 {
     [Theory]
-    [InlineData(false, "alipay.jpg", "17A5DF70E82F659D288A8981D85B59C04595C9314EC35B73EFF6F4BB195D05E3")]
-    [InlineData(true, "wechat.png", "60B353A958A6D85D28B50AD38A64F98078A7C9B16F8AF525AE55D47B7522CB00")]
+    [InlineData(false, "alipay.jpg", "AECE16938CBD44D6EB8B3668689A3F76E5443DAF7B317DB472CF3D9A630B6B78")]
+    [InlineData(true, "wechat.jpg", "D43A1BA99F71159D00831A4111CEB514283D939F9706ED9B1B41E5A3CACAF4A7")]
     public void PackagedPaymentDialogUsesTheExactOwnerSuppliedImage(bool useWechat, string fileName, string approvedHash)
     {
         StaTest.Run(() =>
@@ -48,6 +48,18 @@ public class SponsorshipSettingsTests
             }
             finally { window.Close(); }
         });
+    }
+
+    [Fact]
+    public void OnlyMaintainerPaymentCodesAreEmbedded()
+    {
+        var resources = typeof(SettingsWindow).Assembly.GetManifestResourceNames()
+            .Where(name => name.StartsWith("GlassDesk.Settings.Sponsorship.",
+                StringComparison.Ordinal))
+            .OrderBy(name => name, StringComparer.Ordinal);
+        Assert.Equal(
+            ["GlassDesk.Settings.Sponsorship.alipay.jpg",
+                "GlassDesk.Settings.Sponsorship.wechat.jpg"], resources);
     }
 
     [Fact]

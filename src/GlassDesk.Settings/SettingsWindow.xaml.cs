@@ -204,7 +204,9 @@ public partial class SettingsWindow : GlassWindow
                 ? DockSettings.MaximumFrameLengthDip
                 : display.ToDips((int)display.WorkArea.Width) - 32;
             var maximum = Math.Min(DockSettings.MaximumFrameLengthDip, Math.Max(64, availableWidthDip));
-            var entryCount = (dock.ShowLauncherEntry ? 1 : 0) + (dock.ShowThisPcEntry ? 1 : 0)
+            // 工具栏入口始终显示，固定外框的最小宽度也要为它留位。
+            var entryCount = 1 + (dock.ShowLauncherEntry ? 1 : 0)
+                + (dock.ShowThisPcEntry ? 1 : 0)
                 + (dock.ShowDesktopIconsEntry ? 1 : 0);
             var minimum = Math.Min(Math.Max(DockSettings.MinimumFrameLengthDip,
                 22 + (DockSettings.FixedIconSize + DockSettings.FixedIconSpacing) * entryCount) * dock.SizeScale, maximum);

@@ -6,7 +6,9 @@ using Microsoft.Win32;
 using GlassDesk.Core.Input;
 using GlassDesk.Core.Models;
 using GlassDesk.Core.Models.Settings;
+using GlassDesk.Platform;
 using GlassDesk.Platform.Installation;
+using GlassDesk.Platform.Shell;
 using GlassDesk.UI.Settings;
 using GlassDesk.UI.Theming;
 
@@ -18,6 +20,7 @@ public partial class SettingsWindow
     private InstallationInfo? _installationInfo;
     private Func<bool?>? _desktopIconsRead;
     private Func<bool, string?>? _desktopIconsSet;
+    private bool _loadingTaskbarControls;
 
     /// <summary>应用快捷操作和显示器设置并负责持久化。返回错误说明；null 表示成功。</summary>
     public Func<ShortcutSettings, DisplaySettings, string?>? InteractionSettingsApply { get; set; }
@@ -251,12 +254,74 @@ public partial class SettingsWindow
         {
             DesktopIconsToggleButton.IsEnabled = false;
             DesktopSettingsStatus.Text = "读取桌面图标状态失败：" + ex.Message;
+            LoadTaskbarStatus();
             return;
         }
         DesktopIconsToggleButton.IsEnabled = state.HasValue && DesktopIconsSet is not null;
         DesktopSettingsStatus.Text = state.HasValue
             ? $"当前桌面图标：{(state.Value ? "显示" : "隐藏")}。"
             : "当前环境不支持读取或切换桌面图标。";
+        LoadTaskbarStatus();
+    }
+
+    private void LoadTaskbarStatus()
+    {
+        _loadingTaskbarControls = true;
+        try
+        {
+            var auto_hide = TaskbarSystemSettings.ReadAutoHide();
+            TaskbarAutoHideCheck.IsEnabled = auto_hide.HasValue;
+            TaskbarAutoHideCheck.IsChecked = auto_hide == true;
+            TaskbarAutoHideStatus.Text = auto_hide.HasValue
+                ? $"当前自动隐藏：{(auto_hide.Value ? "开启" : "关闭")}。"
+                : "Explorer 任务栏尚未就绪，暂时无法切换自动隐藏。";
+
+            var position = TaskbarSystemSettings.ReadPosition();
+            TaskbarPositionStatus.Text = position is null
+                ? "当前主任务栏位置：无法读取。"
+                : $"当前主任务栏位置：{position}。";
+            SystemTransparencyStatus.Text =
+                SystemThemeReader.IsTransparencyEnabled()
+                ? "Windows 透明效果：开启。"
+                : "Windows 透明效果：关闭。";
+        }
+        finally { _loadingTaskbarControls = false; }
+    }
+
+    private void OnTaskbarAutoHideChanged(object sender, RoutedEventArgs e)
+    {
+        if (_loadingTaskbarControls || !IsInitialized) return;
+        var enabled = TaskbarAutoHideCheck.IsChecked == true;
+        var applied = TaskbarSystemSettings.TrySetAutoHide(enabled,
+            out var error);
+        LoadTaskbarStatus();
+        TaskbarSettingsStatus.Text = applied
+            ? $"已将系统任务栏自动隐藏{(enabled ? "开启" : "关闭")}。"
+            : "自动隐藏设置失败：" + error;
+    }
+
+    private void OnOpenTaskbarSettingsClick(object sender, RoutedEventArgs e)
+    {
+        var opened = TaskbarSettingsLink.Open(out var error);
+        TaskbarSettingsStatus.Text = opened
+            ? "已打开 Windows 任务栏设置。"
+            : "打开 Windows 任务栏设置失败：" + error;
+    }
+
+    private void OnOpenTransparencySettingsClick(object sender,
+        RoutedEventArgs e)
+    {
+        var opened = TaskbarSettingsLink.OpenColors(out var error);
+        TaskbarSettingsStatus.Text = opened
+            ? "已打开 Windows 透明效果设置。"
+            : "打开 Windows 透明效果设置失败：" + error;
+    }
+
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+        // 从 Windows 设置返回时重新读取，避免把外部修改显示成旧状态。
+        if (IsInitialized) LoadTaskbarStatus();
     }
 
     private void OnDesktopIconsToggleClick(object sender, RoutedEventArgs e)

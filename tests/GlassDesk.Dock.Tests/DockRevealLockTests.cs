@@ -97,7 +97,39 @@ public sealed class DockRevealLockTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void CoveredDockCanRevealAtItsRestingPositionOnlyWhenUnlocked(bool fullscreen)
+    public void CoveredDockStaysHiddenDuringHover(bool fullscreen)
+    {
+        StaTest.Run(() =>
+        {
+            var window = new DockWindow();
+            try
+            {
+                var controller = InstallController(window);
+                // 前台软件覆盖时，锁开关都不能让悬停把 Dock 抢到软件上方。
+                Update(window, covered: true, pointerAtPosition: false, fullscreen: fullscreen);
+                Assert.Equal(AutoHideState.Hidden, controller.State);
+                Update(window, covered: true, pointerAtPosition: true, fullscreen: fullscreen);
+                Assert.Equal(AutoHideState.Hidden, controller.State);
+                Update(window, covered: true, pointerAtPosition: true,
+                    fullscreen: fullscreen, pointerOverVisibleDock: true);
+                Assert.Equal(AutoHideState.Hidden, controller.State);
+
+                window.ToggleRevealLock();
+                Update(window, covered: true, pointerAtPosition: true, fullscreen: fullscreen);
+                Assert.Equal(AutoHideState.Hidden, controller.State);
+                Update(window, covered: true, pointerAtPosition: true,
+                    fullscreen: fullscreen, pointerOverVisibleDock: true);
+                Assert.Equal(AutoHideState.Hidden, controller.State);
+
+                Update(window, covered: false, pointerAtPosition: false);
+                Assert.Equal(AutoHideState.Shown, controller.State);
+            }
+            finally { window.Close(); }
+        });
+    }
+
+    [Fact]
+    public void UncoveredFullscreenDockStillRevealsWhenUnlocked()
     {
         StaTest.Run(() =>
         {
@@ -106,20 +138,13 @@ public sealed class DockRevealLockTests
             {
                 var controller = InstallController(window);
                 window.ToggleRevealLock();
-                Update(window, covered: true, pointerAtPosition: true, fullscreen: fullscreen);
+                Update(window, covered: false, pointerAtPosition: true, fullscreen: true);
                 Assert.Equal(AutoHideState.Hidden, controller.State);
+
                 window.ToggleRevealLock();
-                Update(window, covered: true, pointerAtPosition: false, fullscreen: fullscreen);
+                Update(window, covered: false, pointerAtPosition: false, fullscreen: true);
                 Assert.Equal(AutoHideState.Hidden, controller.State);
-                Update(window, covered: true, pointerAtPosition: true, fullscreen: fullscreen);
-                Assert.Equal(AutoHideState.Shown, controller.State);
-                // Once revealed, hovering the visible Dock keeps it available.
-                Update(window, covered: true, pointerAtPosition: true, fullscreen: fullscreen, pointerOverVisibleDock: true);
-                Assert.Equal(AutoHideState.Shown, controller.State);
-                window.ToggleRevealLock();
-                Update(window, covered: true, pointerAtPosition: true, fullscreen: fullscreen);
-                Assert.Equal(AutoHideState.Hidden, controller.State);
-                Update(window, covered: false, pointerAtPosition: false);
+                Update(window, covered: false, pointerAtPosition: true, fullscreen: true);
                 Assert.Equal(AutoHideState.Shown, controller.State);
             }
             finally { window.Close(); }

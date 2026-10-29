@@ -32,15 +32,13 @@ internal sealed partial class AppHost
 
     private UpdateClient CreateUpdateClient()
     {
-        const string defaultSource = "https://api.github.com/repos/everlosttime/glassdesk-updates/releases/latest";
         var file = Path.Combine(AppContext.BaseDirectory, "update-source.json");
-        var source = defaultSource;
-        if (File.Exists(file))
-        {
-            if (new FileInfo(file).Length > 8192) throw new InvalidDataException("更新源配置过大。");
-            using var document = JsonDocument.Parse(File.ReadAllText(file));
-            source = document.RootElement.GetProperty("releasesApi").GetString() ?? throw new InvalidDataException("更新源未配置。");
-        }
+        // 非官方版只信任随包配置，缺失时不能回退到原作者的更新仓库。
+        if (!File.Exists(file)) throw new InvalidDataException("此版本未配置更新源。");
+        if (new FileInfo(file).Length > 8192) throw new InvalidDataException("更新源配置过大。");
+        using var document = JsonDocument.Parse(File.ReadAllText(file));
+        var source = document.RootElement.GetProperty("releasesApi").GetString()
+            ?? throw new InvalidDataException("更新源未配置。");
         return new UpdateClient(_updateHttp, new Uri(source));
     }
 

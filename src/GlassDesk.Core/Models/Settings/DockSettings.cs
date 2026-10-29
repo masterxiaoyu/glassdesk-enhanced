@@ -66,8 +66,8 @@ public sealed class DockSettings
     public int EdgeHotzoneSize { get; set; } = 14;
 
     /// <summary>
-    /// 当其他窗口盖住程序坞区域时，鼠标移入程序坞原位置属于明确悬停操作，仍会唤出。
-    /// 该设置原字段保留兼容既有配置；显式边缘唤出锁仍拥有最高优先级。
+    /// 旧配置兼容字段。其他窗口盖住程序坞时，鼠标悬停不再唤出 Dock；
+    /// 此字段不再改变遮挡时的行为。
     /// </summary>
     public bool BlockRevealWhenCovered { get; set; } = true;
 

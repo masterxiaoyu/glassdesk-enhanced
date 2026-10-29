@@ -1,14 +1,18 @@
 # Exercise the production Inno script with a dedicated AppId and a controlled probe,
 # never the user's installed GlassDesk, shortcuts, registration, or data.
 [CmdletBinding()]
-param([Parameter(Mandatory=$true)][string]$OutputDirectory)
+param(
+    [Parameter(Mandatory=$true)][string]$OutputDirectory,
+    [Parameter(Mandatory=$true)][string]$DotnetPath,
+    [Parameter(Mandatory=$true)][string]$InnoCompilerPath
+)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $root = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $root) { throw 'Acceptance output must be new.' }
 $null = New-Item -ItemType Directory -Path $root
-$dotnet = 'D:\dotnet10\dotnet.exe'
-$compiler = 'D:\Toolchains\InnoSetup-7.1.0-x64\Compiler\ISCC.exe'
+$dotnet = $DotnetPath
+$compiler = $InnoCompilerPath
 $identity = 'GD.Update.' + [guid]::NewGuid().ToString('N')
 $liveKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\GlassDesk.Independent_is1'
 $before = if (Test-Path -LiteralPath $liveKey) { (Get-ItemProperty -LiteralPath $liveKey | Select-Object InstallLocation,DisplayVersion,UninstallString | ConvertTo-Json -Compress) } else { 'absent' }
@@ -24,13 +28,15 @@ if (args.SequenceEqual(new[] { "--autostart" }))
     File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "restart-marker.json"), JsonSerializer.Serialize(new { args, version = Assembly.GetExecutingAssembly().GetName().Version!.ToString() }));
 else Environment.Exit(2);
 '@ | Set-Content -LiteralPath (Join-Path $stub 'Program.cs') -Encoding utf8
-$script = Get-Content -Raw -LiteralPath (Join-Path $repo 'packaging/GlassDesk-Capture.iss')
+$script = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $repo 'packaging/GlassDesk-Capture.iss')
 $script = $script.Replace('AppIdValue != "GlassDesk.Independent"', 'AppIdValue != "' + $identity + '"')
 $script = $script.Replace('SetupIconFile=..\src\GlassDesk.App\Assets\GlassDesk.ico', 'SetupIconFile=' + (Join-Path $repo 'src/GlassDesk.App/Assets/GlassDesk.ico'))
 $script = $script.Replace('Name: "{autoprograms}\GlassDesk"', 'Name: "{autoprograms}\' + $identity + '"')
 $script = $script.Replace('Name: "{autodesktop}\GlassDesk"', 'Name: "{autodesktop}\' + $identity + '"')
 $iss = Join-Path $root 'test.iss'
 $script | Set-Content -LiteralPath $iss -Encoding utf8
+Copy-Item -LiteralPath (Join-Path $repo 'packaging/INSTALLER-NOTICE.txt') `
+    -Destination (Join-Path $root 'INSTALLER-NOTICE.txt')
 $installed = Join-Path $root 'Installed App'
 $priorStage = $env:GLASSDESK_PACKAGE_STAGE
 $priorDotnet = $env:DOTNET_ROOT
@@ -38,8 +44,8 @@ $priorDotnetX64 = $env:DOTNET_ROOT_X64
 $checks = @()
 $passed = $false
 try {
-    $env:DOTNET_ROOT = 'D:\dotnet10'
-    $env:DOTNET_ROOT_X64 = 'D:\dotnet10'
+    $env:DOTNET_ROOT = Split-Path -Parent $dotnet
+    $env:DOTNET_ROOT_X64 = $env:DOTNET_ROOT
     foreach ($version in @('0.2.8','0.2.9')) {
         $stage = Join-Path $root "stage-$version"
         & $dotnet publish (Join-Path $stub 'Probe.csproj') -c Release -r win-x64 --self-contained false "-p:Version=$version" "-p:FileVersion=$version.0" "-p:AssemblyVersion=$version.0" -o $stage *> (Join-Path $root "publish-$version.log")

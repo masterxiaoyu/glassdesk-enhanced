@@ -25,6 +25,8 @@
       <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel>
           <TextBlock x:Name="SponsorInstructions" Margin="0,0,0,12" TextWrapping="Wrap" />
+          <TextBlock Margin="0,0,0,12" TextWrapping="Wrap"
+                     Text="收款方是本非官方修改版维护者，与原作者 everlosttime 无关。" />
           <Border x:Name="SponsorCodeFrame" Width="260" Height="260" Padding="14" CornerRadius="14"
                   HorizontalAlignment="Center" Background="White" BorderBrush="#FFD8DCE3" BorderThickness="1">
             <Grid>

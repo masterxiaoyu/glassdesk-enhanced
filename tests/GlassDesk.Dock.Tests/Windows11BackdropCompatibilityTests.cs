@@ -374,7 +374,15 @@ public sealed class Windows11BackdropCompatibilityTests(ITestOutputHelper output
         {
             Directory.CreateDirectory(_root);
             var probe = CompatibilityProbePath.File("GlassCaptureProbe.dll");
-            var start = new ProcessStartInfo("D:\\dotnet10\\dotnet.exe") { UseShellExecute = false, CreateNoWindow = true };
+            // 优先沿用当前测试使用的 .NET 主机，兼容自定义 SDK 安装目录。
+            var dotnetHost = Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")
+                ?? Environment.GetEnvironmentVariable("GLASSDESK_DOTNET")
+                ?? "dotnet";
+            var start = new ProcessStartInfo(dotnetHost)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
             start.ArgumentList.Add(probe); start.ArgumentList.Add("fixture"); start.ArgumentList.Add(_root);
             _process = Process.Start(start)!;
             Wait(() => File.Exists(Path.Combine(_root, "ready.json")));

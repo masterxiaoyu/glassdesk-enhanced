@@ -11,7 +11,7 @@ public partial class SettingsWindow
     private ImageSource? _wechatSponsorCode;
 
     private void LoadSponsorshipCodes() => SetSponsorshipCodes(
-        LoadSponsorshipCode("alipay.jpg") ?? LoadSponsorshipCode("alipay.png"), LoadSponsorshipCode("wechat.png"));
+        LoadSponsorshipCode("alipay.jpg"), LoadSponsorshipCode("wechat.jpg"));
 
     private static BitmapFrame? LoadSponsorshipCode(string fileName)
     {
@@ -32,7 +32,7 @@ public partial class SettingsWindow
         }
     }
 
-    /// <summary>设置作者提供的原始收款码；未提供的渠道不会显示其它渠道的二维码。</summary>
+    /// <summary>只使用本修改版维护者的收款码，缺失时不替换为其他渠道。</summary>
     public void SetSponsorshipCodes(ImageSource? alipay, ImageSource? wechat)
     {
         _alipaySponsorCode = alipay;

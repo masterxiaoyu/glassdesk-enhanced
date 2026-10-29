@@ -312,7 +312,7 @@
                 <TextBlock Margin="0,7" Text="下一页" /><settings:ShortcutRecorder x:Name="NextPageHotkeyBox" AutomationProperties.Name="下一页快捷键"  RecordingCompleted="OnShortcutRecordingCompleted" />
                 <TextBlock Margin="0,7" Text="上一页" /><settings:ShortcutRecorder x:Name="PreviousPageHotkeyBox" AutomationProperties.Name="上一页快捷键"  RecordingCompleted="OnShortcutRecordingCompleted" />
                 <TextBlock Margin="0,7" Text="切换桌面图标" /><settings:ShortcutRecorder x:Name="ToggleDesktopIconsHotkeyBox" AutomationProperties.Name="切换桌面图标快捷键"  RecordingCompleted="OnShortcutRecordingCompleted" />
-                <TextBlock Margin="0,7" Text="锁定 Dock 遮挡唤出" /><settings:ShortcutRecorder x:Name="ToggleDockRevealLockHotkeyBox" AutomationProperties.Name="切换 Dock 遮挡唤出锁定快捷键"  RecordingCompleted="OnShortcutRecordingCompleted" />
+                <TextBlock Margin="0,7" Text="锁定 Dock 全屏唤出" /><settings:ShortcutRecorder x:Name="ToggleDockRevealLockHotkeyBox" AutomationProperties.Name="切换 Dock 全屏唤出锁定快捷键"  RecordingCompleted="OnShortcutRecordingCompleted" />
               </UniformGrid>
               <TextBlock x:Name="InteractionSettingsStatus" Margin="0,8,0,14" TextWrapping="Wrap"
                          AutomationProperties.Name="快捷操作设置状态" />
@@ -334,6 +334,37 @@
                         AutomationProperties.Name="切换桌面图标显示" Click="OnDesktopIconsToggleClick" />
               </StackPanel>
               <TextBlock x:Name="DesktopSettingsStatus" Margin="0,8,0,14" TextWrapping="Wrap" AutomationProperties.Name="桌面图标显示状态" />
+              <TextBlock FontSize="15" FontWeight="SemiBold" Text="Windows 任务栏"
+                         Foreground="{Binding ForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+              <CheckBox x:Name="TaskbarAutoHideCheck" Margin="0,10,0,4"
+                        Content="自动隐藏系统任务栏"
+                        AutomationProperties.Name="自动隐藏系统任务栏"
+                        Checked="OnTaskbarAutoHideChanged"
+                        Unchecked="OnTaskbarAutoHideChanged" />
+              <TextBlock x:Name="TaskbarAutoHideStatus" Margin="0,0,0,8"
+                         TextWrapping="Wrap"
+                         AutomationProperties.Name="系统任务栏自动隐藏状态" />
+              <TextBlock x:Name="TaskbarPositionStatus" Margin="0,0,0,8"
+                         TextWrapping="Wrap"
+                         AutomationProperties.Name="系统任务栏位置状态" />
+              <TextBlock x:Name="SystemTransparencyStatus" Margin="0,0,0,8"
+                         TextWrapping="Wrap"
+                         AutomationProperties.Name="Windows 透明效果状态" />
+              <TextBlock Margin="0,0,0,10" TextWrapping="Wrap">
+                <Run Text="Windows 透明效果也影响其他界面，不能让任务栏完全透明。" />
+                <Run Text="任务栏可选位置由当前 Windows 版本和功能推送决定。" />
+              </TextBlock>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                <Button Padding="10,7" Content="打开任务栏设置"
+                        AutomationProperties.Name="打开 Windows 任务栏设置"
+                        Click="OnOpenTaskbarSettingsClick" />
+                <Button Margin="8,0,0,0" Padding="10,7" Content="打开透明效果设置"
+                        AutomationProperties.Name="打开 Windows 透明效果设置"
+                        Click="OnOpenTransparencySettingsClick" />
+              </StackPanel>
+              <TextBlock x:Name="TaskbarSettingsStatus" Margin="0,0,0,14"
+                         TextWrapping="Wrap"
+                         AutomationProperties.Name="任务栏设置结果" />
               <Separator Margin="0,4,0,14" />
               <TextBlock x:Name="BackupSectionHeading" FontSize="16" FontWeight="SemiBold" Text="备份与恢复"
                          Foreground="{Binding ForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
@@ -360,7 +391,7 @@
                          Text="GlassDesk 免费提供全部功能。赞助完全自愿，不赞助也能使用全部功能，无需付费解锁。" />
               <TextBlock Margin="0,6,0,14" TextWrapping="Wrap"
                          Foreground="{Binding SecondaryForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}"
-                         Text="如果您觉得这款软件对您有帮助，可以自愿赞助支持开发" />
+                          Text="如果本修改版对您有帮助，可以自愿支持本修改版维护者；收款方与原作者无关。" />
               <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                 <RadioButton x:Name="SponsorAlipayOption" Content="支付宝" GroupName="SponsorPaymentMethod"
                              Padding="6,4" Margin="0,0,20,0" IsChecked="True"
@@ -378,6 +409,12 @@
               <Separator Margin="0,4,0,14" />
               <TextBlock x:Name="AboutSectionHeading" FontSize="16" FontWeight="SemiBold" Text="关于与运行信息"
                          Foreground="{Binding ForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+              <TextBlock Margin="0,10,0,4" TextWrapping="Wrap"
+                         Text="本软件是基于 GlassDesk 1.4.0 的非官方修改版。原作者：everlosttime。" />
+              <TextBlock Margin="0,0,0,4" TextWrapping="Wrap"
+                         Text="原产品：https://github.com/everlosttime/glassdesk" />
+              <TextBlock Margin="0,0,0,8" TextWrapping="Wrap"
+                         Text="公开源码：https://github.com/everlosttime/glassdesk-open-source" />
               <TextBlock x:Name="ProductVersionText" Margin="0,10,0,6" FontSize="14" FontWeight="SemiBold"
                          AutomationProperties.Name="GlassDesk 当前版本" />
               <Button x:Name="CheckUpdateButton" Width="132" HorizontalAlignment="Left" Padding="10,7"
