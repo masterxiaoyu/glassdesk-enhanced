@@ -22,20 +22,40 @@ public static partial class TaskbarSystemSettings
   /// <summary>读取系统任务栏位置；可选位置由 Windows 版本和推送决定。</summary>
   public static string? ReadPosition()
   {
+    var taskbar = FindWindow("Shell_TrayWnd", null);
+    if (taskbar == 0) return null;
+    var monitor = Display32.MonitorFromWindow(taskbar,
+      Display32.MonitorDefaultToNearest);
+    if (monitor == 0) return null;
+    var monitor_info = new MonitorInfoEx
+    {
+      Size = Marshal.SizeOf<MonitorInfoEx>(),
+      DeviceName = string.Empty,
+    };
+    if (!Display32.GetMonitorInfo(monitor, ref monitor_info)) return null;
+
     var data = new Shell32.AppBarData
     {
       Size = (uint)Marshal.SizeOf<Shell32.AppBarData>(),
     };
-    if (Shell32.SHAppBarMessage(Shell32.AbmGetTaskbarPos, ref data) == 0)
-      return null;
-    return data.Edge switch
+    var queried = Shell32.SHAppBarMessage(Shell32.AbmGetTaskbarPos,
+      ref data);
+    var rect = data.Rectangle;
+    if (queried == 0 || rect.Width <= 0 || rect.Height <= 0)
     {
-      0 => "左侧",
-      1 => "顶部",
-      2 => "右侧",
-      3 => "底部",
-      _ => null,
-    };
+      // 某些桌面会话不响应 Shell 查询，改读同一任务栏窗口的矩形。
+      if (!Display32.GetWindowRect(taskbar, out rect)) return null;
+    }
+    if (rect.Width <= 0 || rect.Height <= 0) return null;
+
+    // Shell 只返回矩形，Edge 字段不更新；与任务栏所在屏幕边界比较。
+    if (rect.Width >= rect.Height)
+      return Math.Abs(rect.Top - monitor_info.Monitor.Top) <=
+        Math.Abs(rect.Bottom - monitor_info.Monitor.Bottom)
+        ? "顶部" : "底部";
+    return Math.Abs(rect.Left - monitor_info.Monitor.Left) <=
+      Math.Abs(rect.Right - monitor_info.Monitor.Right)
+      ? "左侧" : "右侧";
   }
 
   /// <summary>仅在用户操作后写入系统设置，并读回确认是否生效。</summary>
