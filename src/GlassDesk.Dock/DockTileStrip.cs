@@ -650,6 +650,8 @@ public sealed class DockTileStrip : Border
             && !entryId.StartsWith("entry:", StringComparison.Ordinal))
         {
             TileContextMenuRequested?.Invoke(this, entryId);
+            // 应用磁贴已打开自己的菜单，不再冒泡出 Dock 的通用菜单。
+            e.Handled = true;
         }
     }
 

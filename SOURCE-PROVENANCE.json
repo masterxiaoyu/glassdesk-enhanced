@@ -1,11 +1,11 @@
 {
     "product":  "GlassDesk",
-    "version":  "1.5.0",
+    "version":  "1.5.1",
     "variant":  "unofficial-derivative-of-last-official-release-without-information-bar",
     "originalTag":  "v1.4.0",
     "originalCommit":  "129e46c0611bdce20e838cbea09b89f572975f94",
     "originalRepository":  "https://github.com/everlosttime/glassdesk",
-    "exportMethod":  "The initial public snapshot exported complete allowlisted src/tests and required build/package/configuration and third-party notices from v1.4.0. The current 1.5.0 derivative modifies source, resources, tests and documentation; see LOCAL-MODIFICATIONS.md and the Git history.",
+    "exportMethod":  "The initial public snapshot exported complete allowlisted src/tests and required build/package/configuration and third-party notices from v1.4.0. The current 1.5.1 derivative modifies source, resources, tests and documentation; see LOCAL-MODIFICATIONS.md and the Git history.",
     "originalProductSourceModified":  true,
     "derivativeRepository":  "https://github.com/masterxiaoyu/glassdesk-enhanced",
     "privateDevelopmentHistoryIncluded":  false,

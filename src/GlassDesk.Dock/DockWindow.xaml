@@ -11,7 +11,8 @@
     Topmost="True"
     AllowDrop="True"
     Drop="OnExternalDrop"
-    DragOver="OnExternalDragOver">
+    DragOver="OnExternalDragOver"
+    MouseRightButtonUp="OnDockContextMenu">
 
   <controls:GlassWindow.Resources>
     <Style x:Key="DockEntryButton" TargetType="Button">

@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GlassDesk.AppServices;
@@ -43,6 +44,8 @@ public partial class DockWindow : GlassWindow
     private Action<PixelRect?>? _toggleLauncher;
     /// <summary>宿主提供与桌面图标快捷键相同的动作，不依赖快捷键是否启用。</summary>
     public Action? ToggleDesktopIcons { get; set; }
+    /// <summary>通过 Dock 右键菜单打开设置，作为托盘入口的替代。</summary>
+    public Action? OpenSettings { get; set; }
     private System.Windows.Threading.DispatcherTimer? _failureNoticeTimer;
     private readonly DockTileStrip _tileStrip;
 
@@ -865,6 +868,8 @@ public partial class DockWindow : GlassWindow
         }
 
         _ = menu.Items.Add(MenuItem("从 Dock 移除", () => OnUnpinRequested(this, entryId)));
+        _ = menu.Items.Add(new Separator());
+        _ = menu.Items.Add(MenuItem("设置…", () => OpenSettings?.Invoke()));
 
         menu.Closed += (_, _) =>
         {
@@ -872,6 +877,30 @@ public partial class DockWindow : GlassWindow
             RestorePopupForeground(foregroundBefore, menuHandle);
         };
 
+        _ = WindowActivation.TryBringToForeground(Handle);
+        menu.IsOpen = true;
+    }
+
+    /// <summary>在 Dock 空白处和内置入口右键时提供设置入口。</summary>
+    private void OnDockContextMenu(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        _autoHide?.PushSuppress(DateTime.UtcNow);
+
+        var menu = new ContextMenu { Placement = PlacementMode.MousePoint };
+        var foregroundBefore = WindowControl.GetForegroundWindow();
+        nint menuHandle = 0;
+        menu.Opened += (_, _) => menuHandle =
+            (PresentationSource.FromVisual(menu) as
+                System.Windows.Interop.HwndSource)?.Handle ?? 0;
+        _ = menu.Items.Add(MenuItem("设置…", () => OpenSettings?.Invoke()));
+        menu.Closed += (_, _) =>
+        {
+            _autoHide?.PopSuppress(DateTime.UtcNow);
+            RestorePopupForeground(foregroundBefore, menuHandle);
+        };
+
+        // Dock 不主动获取焦点；菜单打开前需短暂激活以支持点击外部收起。
         _ = WindowActivation.TryBringToForeground(Handle);
         menu.IsOpen = true;
     }
