@@ -55,7 +55,7 @@ public partial class SettingsWindow : GlassWindow
         {
             InitializeComponent();
             AutostartCheck.IsEnabled = false;
-            Title = "GlassDesk - Capture Acceptance 20261007";
+            Title = "GlassDesk 设置中心";
         }
         finally
         {
@@ -194,6 +194,8 @@ public partial class SettingsWindow : GlassWindow
             ShowLauncherEntryCheckBox.IsChecked = dock.ShowLauncherEntry;
             ShowThisPcEntryCheckBox.IsChecked = dock.ShowThisPcEntry;
             ShowDesktopIconsEntryCheckBox.IsChecked = dock.ShowDesktopIconsEntry;
+            ShowRunningWindowsCheck.IsChecked = dock.ShowRunningWindows;
+            TaskbarModeCombo.SelectedIndex = dock.ShowTopBar ? 1 : 0;
             DockScaleSlider.Value = dock.SizeScale;
             DockScaleReadout.Text = $"{dock.SizeScale:P0} · 图标 {48 * dock.SizeScale:0} DIP";
             DockPlacementCombo.SelectedIndex = (int)dock.Placement;
@@ -209,7 +211,8 @@ public partial class SettingsWindow : GlassWindow
                 + (dock.ShowThisPcEntry ? 1 : 0)
                 + (dock.ShowDesktopIconsEntry ? 1 : 0);
             var minimum = Math.Min(Math.Max(DockSettings.MinimumFrameLengthDip,
-                22 + (DockSettings.FixedIconSize + DockSettings.FixedIconSpacing) * entryCount) * dock.SizeScale, maximum);
+                22 + (DockSettings.FixedIconSize + DockSettings.FixedIconSpacing) * entryCount
+                + 14) * dock.SizeScale, maximum);
             DockFrameLengthSlider.Minimum = minimum;
             DockFrameLengthSlider.Maximum = maximum;
             var frameLengthValid = dock.FrameLengthDip == 0
@@ -218,8 +221,8 @@ public partial class SettingsWindow : GlassWindow
                 ? Math.Clamp(dock.FrameLengthDip, minimum, maximum)
                 : minimum;
             DockFrameLengthReadout.Text = dock.FrameLengthDip > 0
-                ? $"固定外框：{DockFrameLengthSlider.Value:0} DIP"
-                : "当前随图标内容自动调整；拖动滑块后固定外框长度。";
+                ? $"长度：{DockFrameLengthSlider.Value:0} DIP"
+                : "自适应内容宽度";
             _dockValuesOutOfRange = !Enum.IsDefined(dock.Placement)
                 || !Within(dock.OffsetX, -200, 200) || !Within(dock.OffsetY, -200, 200)
                 || !frameLengthValid;
@@ -227,7 +230,7 @@ public partial class SettingsWindow : GlassWindow
             DockOffsetYSlider.Value = Coerce(dock.OffsetY, -200, 200);
             DockSettingsStatus.Text = _dockValuesOutOfRange
                 ? "配置文件中有超出支持范围的数值，已显示为最近的可用值；请先恢复当前页默认，避免覆盖原数据。"
-                : "整体大小调整图标与栏高度；外框长度可独立调整。修改后立即保存并应用。";
+                : "";
         }
         finally { _loadingDockControls = false; }
     }
@@ -360,6 +363,10 @@ public partial class SettingsWindow : GlassWindow
             ShowLauncherEntry = ShowLauncherEntryCheckBox.IsChecked == true,
             ShowThisPcEntry = ShowThisPcEntryCheckBox.IsChecked == true,
             ShowDesktopIconsEntry = ShowDesktopIconsEntryCheckBox.IsChecked == true,
+            ShowRunningWindows = ShowRunningWindowsCheck.IsChecked == true,
+            ShowSystemControls = previousDock.ShowSystemControls,
+            ShowTopBar = TaskbarModeCombo.SelectedIndex == 1,
+            HideNativeTaskbar = TaskbarModeCombo.SelectedIndex == 1,
             IconSize = DockSettings.FixedIconSize,
             IconSpacing = DockSettings.FixedIconSpacing,
             MagnificationPeak = DockSettings.FixedMagnificationPeak,
@@ -398,10 +405,10 @@ public partial class SettingsWindow : GlassWindow
             if (Math.Abs(previousCorner - current.Appearance.DockCornerRadius) > 0.001)
                 ThemeService.Current?.Update(current.Appearance);
             DockFrameLengthReadout.Text = next.FrameLengthDip > 0
-                ? $"固定外框：{DockFrameLengthSlider.Value:0} DIP"
-                : "当前随图标内容自动调整；拖动滑块后固定外框长度。";
+                ? $"长度：{DockFrameLengthSlider.Value:0} DIP"
+                : "自适应内容宽度";
             LoadDockControls();
-            DockSettingsStatus.Text = $"已保存；整体大小 {next.SizeScale:P0}，图标 {48 * next.SizeScale:0} DIP。";
+            DockSettingsStatus.Text = $"已保存 · 缩放比例 {next.SizeScale:P0}";
         }
         catch (Exception ex)
         {
@@ -431,17 +438,15 @@ public partial class SettingsWindow : GlassWindow
         var builder = new StringBuilder();
 
         builder.AppendLine(culture, $"Windows：{WindowsCapabilities.OsVersion}（Build {WindowsCapabilities.BuildNumber}）");
-        builder.AppendLine(culture, $"系统背景材质：{(WindowsCapabilities.SupportsSystemBackdrop ? "受支持（Build 22621 及以上）" : "不支持，使用自绘面板")}");
-        builder.AppendLine(culture, $"窗口圆角：{(WindowsCapabilities.SupportsWindowCornerPreference ? "由 DWM 提供" : "不受支持，使用自绘圆角")}");
 
         if (theme is not null)
         {
-            builder.AppendLine(culture, $"主题：{theme.Appearance.Theme}（当前 {(theme.IsDark ? "深色" : "浅色")}）");
+            builder.AppendLine(culture, $"主题：{(theme.IsDark ? "深色" : "浅色")}");
             builder.AppendLine(culture, $"面板：{(theme.UseOpaquePanels ? "不透明" : "半透明玻璃")}");
             builder.AppendLine(culture, $"动画：{(theme.AnimationsEnabled ? "开启" : "已减少")}");
         }
 
-        builder.AppendLine(culture, $"窗口玻璃做法：{(SurfaceMode == GlassSurfaceMode.Acrylic ? "亚克力背景模糊" : "自绘半透明面板（无背景模糊）")}");
+        builder.AppendLine(culture, $"窗口材质：{(SurfaceMode == GlassSurfaceMode.Acrylic ? "亚克力背景模糊" : "半透明")}");
 
         if (_dataStore is not null)
         {

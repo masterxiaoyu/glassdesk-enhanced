@@ -125,6 +125,10 @@ internal sealed partial class AppHost
                 var temporary = _performance.IsTemporaryActivation;
 
                 _dock?.SetPerformanceSleeping(suppressed);
+                var topBarVisible = _dockSettings?.Settings.ShowTopBar == true
+                    && !suppressed;
+                if (top_bar_ is not null && top_bar_.IsVisible != topBarVisible)
+                    top_bar_.SetEnabled(topBarVisible);
                 _dock?.SetBackgroundCaptureSleeping(sleeping && !suppressed);
                 if (sleeping && suppressed && _launcher?.IsVisible == true && !_launcher.IsClosingContainer) HideLauncher();
 
@@ -138,7 +142,10 @@ internal sealed partial class AppHost
                     _launcher?.SetPerformanceSleeping(launcherShouldSleep);
                 }
                 _launcher?.SetBackgroundWorkSuspended(!launcherVisible && !temporary || sleeping && suppressed);
-                _services?.Running.SetSuspended(sleeping || state == PerformanceState.WarmHidden || suppressed && !launcherVisible);
+                _services?.Running.SetSuspended(
+                    (sleeping || state == PerformanceState.WarmHidden)
+                    && top_bar_?.IsVisible != true
+                    || suppressed && !launcherVisible);
                 if (!sleeping && _libraryDirtyWhileSleeping)
                 {
                     _libraryDirtyWhileSleeping = false;

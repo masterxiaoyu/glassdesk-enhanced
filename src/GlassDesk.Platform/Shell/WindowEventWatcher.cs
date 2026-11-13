@@ -41,6 +41,7 @@ public sealed class WindowEventWatcher : IDisposable
         User32.EventSystemMinimizeStart,
         User32.EventSystemMinimizeEnd,
         User32.EventSystemForeground,
+        0x800C, // EVENT_OBJECT_NAMECHANGE：任务栏标题随文档名称更新。
     ];
 
     private readonly Action? _onChanged;

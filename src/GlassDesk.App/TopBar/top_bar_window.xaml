@@ -1,0 +1,430 @@
+<Window x:Class="GlassDesk.App.TopBar.TopBarWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:GlassDesk.App.TopBar"
+        Title="GlassDesk 顶部菜单状态栏"
+        AutomationProperties.Name="GlassDesk 顶部菜单状态栏"
+        WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False"
+        AllowsTransparency="True" Background="Transparent" Topmost="True"
+        WindowStartupLocation="Manual"
+        Height="{x:Static local:TopBarWindow.BarHeight}"
+        FontFamily="Segoe UI Variable, Segoe UI" FontSize="13"
+        Foreground="#F5FFFFFF" PreviewKeyDown="OnStatusKeyDown"
+        AllowDrop="True" DragOver="OnTrayDragOver" Drop="OnTrayDrop"
+        DragLeave="OnTrayDragLeave">
+  <Window.Resources>
+    <!-- 有线使用显示器与支架轮廓，无线保持 Wi-Fi 弧线。 -->
+    <Geometry x:Key="WiredIcon">
+      M2,3 H16 Q17,3 17,4 V12 Q17,13 16,13
+      H2 Q1,13 1,12 V4 Q1,3 2,3 Z M9,13 V16 M5,16 H13
+    </Geometry>
+    <Geometry x:Key="BatteryOutline">
+      M2,4 H14 Q15,4 15,5 V13 Q15,14 14,14
+      H2 Q1,14 1,13 V5 Q1,4 2,4 Z M17,7 V11
+    </Geometry>
+    <Geometry x:Key="WirelessIcon">
+      M1,5 C5.4,1 12.6,1 17,5
+      M4,8 C6.8,5.4 11.2,5.4 14,8
+      M7,11 C8.2,9.9 9.8,9.9 11,11 M9,14 L9.01,14
+    </Geometry>
+    <Geometry x:Key="OfflineIcon">
+      M2,2 L16,16 M1,5 C5.4,1 12.6,1 17,5
+      M4,8 C6.8,5.4 11.2,5.4 14,8 M9,14 L9.01,14
+    </Geometry>
+    <Geometry x:Key="SoundIcon">M2,7 H5 L9,3 V15 L5,11 H2 Z M12,6 Q15,9 12,12 M14,3 Q20,9 14,15</Geometry>
+    <Geometry x:Key="ControlsIcon">M4,2 H14 A3,3 0 0 1 14,8 H4 A3,3 0 0 1 4,2 Z M4,11 H14 A3,3 0 0 1 14,17 H4 A3,3 0 0 1 4,11 Z M5,5 L5.01,5 M13,14 L13.01,14</Geometry>
+    <Geometry x:Key="BellIcon">M4,12 V7 A5,5 0 0 1 14,7 V12 L16,14 H2 Z M7,16 Q9,19 11,16</Geometry>
+    <Style x:Key="StatusGlyph" TargetType="Path">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="Fill" Value="Transparent" />
+      <Setter Property="Stroke" Value="#F5FFFFFF" />
+      <Setter Property="StrokeThickness" Value="1.5" />
+      <Setter Property="StrokeLineJoin" Value="Round" />
+      <Setter Property="StrokeStartLineCap" Value="Round" />
+      <Setter Property="StrokeEndLineCap" Value="Round" />
+    </Style>
+    <Style TargetType="Button">
+      <Setter Property="Foreground" Value="#F5FFFFFF" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="8,0" />
+      <Setter Property="Height" Value="{x:Static local:TopBarWindow.BarHeight}" />
+      <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Chrome" Background="{TemplateBinding Background}"
+                    CornerRadius="5" Padding="{TemplateBinding Padding}">
+              <ContentPresenter VerticalAlignment="Center"
+                                HorizontalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Chrome" Property="Background"
+                        Value="#20FFFFFF" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Chrome" Property="Background"
+                        Value="#32FFFFFF" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="PanelAction" TargetType="Button"
+           BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Margin" Value="0,2" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Row" CornerRadius="7"
+                    Background="{TemplateBinding Background}" Padding="10,0">
+              <ContentPresenter VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Row" Property="Background"
+                        Value="#1CFFFFFF" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="StatusPanel" TargetType="Border">
+      <Setter Property="Background" Value="#F0262629" />
+      <Setter Property="BorderBrush" Value="#25FFFFFF" />
+      <Setter Property="BorderThickness" Value="0.7" />
+      <Setter Property="CornerRadius" Value="14" />
+      <Setter Property="Padding" Value="16" />
+      <Setter Property="Margin" Value="12,8,12,20" />
+      <Setter Property="Effect">
+        <Setter.Value>
+          <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.28" />
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style TargetType="Slider">
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Slider">
+            <Grid Margin="6,0">
+              <Border Height="4" Background="#35FFFFFF" CornerRadius="2" />
+              <Track x:Name="PART_Track" Minimum="{TemplateBinding Minimum}"
+                     Maximum="{TemplateBinding Maximum}"
+                     Value="{TemplateBinding Value}">
+                <Track.DecreaseRepeatButton>
+                  <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Height="4" Background="#F5FFFFFF"
+                                CornerRadius="2" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.DecreaseRepeatButton>
+                <Track.Thumb>
+                  <Thumb Width="13" Height="13">
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Ellipse Fill="White" />
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+                <Track.IncreaseRepeatButton>
+                  <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
+                    <RepeatButton.Template>
+                      <ControlTemplate TargetType="RepeatButton">
+                        <Border Background="Transparent" />
+                      </ControlTemplate>
+                    </RepeatButton.Template>
+                  </RepeatButton>
+                </Track.IncreaseRepeatButton>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style TargetType="CheckBox">
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="CheckBox">
+            <Grid Height="28">
+              <ContentPresenter VerticalAlignment="Center" />
+              <Border x:Name="Switch" Width="29" Height="17"
+                      HorizontalAlignment="Right" Background="#4AFFFFFF"
+                      CornerRadius="9" Padding="2">
+                <Ellipse x:Name="Dot" Width="13" Height="13" Fill="White"
+                         HorizontalAlignment="Left" />
+              </Border>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="Switch" Property="Background"
+                        Value="#568AF3" />
+                <Setter TargetName="Dot" Property="HorizontalAlignment"
+                        Value="Right" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="CalendarDay" TargetType="Button"
+           BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Width" Value="30" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border CornerRadius="15"
+                    Background="{TemplateBinding Background}">
+              <ContentPresenter HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+  <Border x:Name="Surface" Background="#B8242426"
+          BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
+    <Grid Margin="10,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Orientation="Horizontal">
+        <Button x:Name="StartButton" Click="OnStart"
+                ToolTip="开始（右键打开 GlassDesk 菜单）"
+                MouseRightButtonUp="OnSystemMenu"
+                AutomationProperties.Name="Windows 开始菜单">
+          <Path Fill="White" Width="15" Height="15" Stretch="Uniform"
+                Data="M0,0 H6 V6 H0 Z M8,0 H14 V6 H8 Z
+                      M0,8 H6 V14 H0 Z M8,8 H14 V14 H8 Z" />
+        </Button>
+        <Button Click="OnApplicationMenu" ToolTip="当前应用">
+          <TextBlock x:Name="ApplicationName" Text="GlassDesk"
+                     FontWeight="SemiBold" MaxWidth="200"
+                     TextTrimming="CharacterEllipsis" />
+        </Button>
+      </StackPanel>
+      <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Hidden"
+                    VerticalScrollBarVisibility="Disabled">
+        <StackPanel x:Name="ApplicationMenus" Orientation="Horizontal" />
+      </ScrollViewer>
+      <StackPanel Grid.Column="2" Orientation="Horizontal">
+        <StackPanel x:Name="PinnedTrayHost" Orientation="Horizontal"
+                    Background="Transparent" MinWidth="12"
+                    AutomationProperties.Name="菜单栏常驻后台图标" />
+        <Button x:Name="OverflowButton" ToolTip="更多菜单栏图标"
+                Click="OnTray" AllowDrop="True"
+                DragEnter="OnOverflowDragEnter"
+                AutomationProperties.Name="顶部栏后台图标">
+          <TextBlock Text="•••" FontSize="12" />
+        </Button>
+        <Button x:Name="NetworkButton" ToolTip="网络" Click="OnNetwork"
+                AutomationProperties.Name="顶部栏网络">
+          <Path x:Name="NetworkIcon" Style="{StaticResource StatusGlyph}"
+                Data="{StaticResource OfflineIcon}" />
+        </Button>
+        <Button x:Name="VolumeButton" ToolTip="声音" Click="OnVolume"
+                AutomationProperties.Name="顶部栏音量">
+          <Path Style="{StaticResource StatusGlyph}"
+                Data="{StaticResource SoundIcon}" />
+        </Button>
+        <Button x:Name="BatteryButton" ToolTip="电池" Click="OnBattery"
+                AutomationProperties.Name="顶部栏电池">
+          <Grid Width="23" Height="18">
+            <Path Data="{StaticResource BatteryOutline}"
+                  Stroke="#F5FFFFFF" StrokeThickness="1.4"
+                  StrokeLineJoin="Round" />
+            <Rectangle x:Name="BatteryFill" Fill="#F5FFFFFF" Height="6"
+                       HorizontalAlignment="Left" Margin="3,0,0,0"
+                       VerticalAlignment="Center" RadiusX="1" RadiusY="1">
+              <Rectangle.Style>
+                <Style TargetType="Rectangle">
+                  <Style.Triggers>
+                    <DataTrigger Value="True" Binding="{Binding Tag,
+                        ElementName=BatteryButton}">
+                      <Setter Property="Visibility" Value="Collapsed" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </Rectangle.Style>
+            </Rectangle>
+            <Path x:Name="BatteryPowerMark" Fill="#F5FFFFFF"
+                  Data="M9,5 L5,10 H8 L7,13 L12,8 H9 Z">
+              <Path.Style>
+                <Style TargetType="Path">
+                  <Setter Property="Visibility" Value="Collapsed" />
+                  <Style.Triggers>
+                    <DataTrigger Value="True" Binding="{Binding Tag,
+                        ElementName=BatteryButton}">
+                      <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </Path.Style>
+            </Path>
+          </Grid>
+        </Button>
+        <Button x:Name="NotificationsButton" ToolTip="通知中心"
+                Click="OnNotifications" AutomationProperties.Name="顶部栏通知">
+          <Path Style="{StaticResource StatusGlyph}"
+                Data="{StaticResource BellIcon}" />
+        </Button>
+        <Button x:Name="ControlCenterButton" ToolTip="控制中心"
+                Click="OnQuickSettings" AutomationProperties.Name="顶部栏控制中心">
+          <Path Style="{StaticResource StatusGlyph}"
+                Data="{StaticResource ControlsIcon}" />
+        </Button>
+        <Button x:Name="CalendarButton" ToolTip="日期与日历" Click="OnCalendar"
+                AutomationProperties.Name="顶部栏日历">
+          <TextBlock x:Name="Clock" />
+        </Button>
+      </StackPanel>
+      <Popup x:Name="NetworkPopup" Placement="Bottom"
+             PlacementTarget="{Binding ElementName=NetworkButton}"
+             AllowsTransparency="True" StaysOpen="False">
+        <Border Style="{StaticResource StatusPanel}" Width="300">
+          <StackPanel>
+            <TextBlock Text="网络" FontSize="14" FontWeight="SemiBold" />
+            <TextBlock x:Name="NetworkSummary" Margin="10,16,0,12"
+                       Opacity="0.7" TextWrapping="Wrap" />
+            <Button Style="{StaticResource PanelAction}"
+                    Content="Wi-Fi 设置…" Click="OnWifiSettings" />
+            <Button Style="{StaticResource PanelAction}"
+                    Content="网络设置…" Click="OnNetworkSettings" />
+          </StackPanel>
+        </Border>
+      </Popup>
+      <Popup x:Name="BatteryPopup" Placement="Bottom"
+             PlacementTarget="{Binding ElementName=BatteryButton}"
+             AllowsTransparency="True" StaysOpen="False">
+        <Border Style="{StaticResource StatusPanel}" Width="300">
+          <StackPanel>
+            <TextBlock Text="电池" FontSize="14" FontWeight="SemiBold" />
+            <TextBlock x:Name="BatteryPercent" FontSize="28"
+                       Margin="8,14,0,4" />
+            <TextBlock x:Name="BatterySummary" TextWrapping="Wrap"
+                       Opacity="0.7" Margin="8,0,8,14" />
+            <Button Style="{StaticResource PanelAction}"
+                    Content="电源与电池设置…" Click="OnPowerSettings" />
+          </StackPanel>
+        </Border>
+      </Popup>
+      <Popup x:Name="NotificationsPopup" Placement="Bottom"
+             PlacementTarget="{Binding ElementName=NotificationsButton}"
+             AllowsTransparency="True" StaysOpen="False">
+        <Border Style="{StaticResource StatusPanel}" Width="380">
+          <StackPanel>
+            <Grid Margin="0,0,0,12">
+              <TextBlock Text="通知中心" FontSize="14"
+                         FontWeight="SemiBold" VerticalAlignment="Center" />
+              <Button Style="{StaticResource PanelAction}" Content="刷新"
+                      HorizontalAlignment="Right" Click="OnRefreshNotifications" />
+            </Grid>
+            <TextBlock x:Name="NotificationStatus" Margin="8,6,8,10"
+                       TextWrapping="Wrap" Opacity="0.7" />
+            <Button x:Name="NotificationAccessButton"
+                    Style="{StaticResource PanelAction}"
+                    Click="OnNotificationAccess" />
+            <ScrollViewer MaxHeight="500"
+                          VerticalScrollBarVisibility="Auto">
+              <StackPanel x:Name="NotificationItems" />
+            </ScrollViewer>
+          </StackPanel>
+        </Border>
+      </Popup>
+      <Popup x:Name="VolumePopup" Placement="Bottom"
+             PlacementTarget="{Binding ElementName=VolumeButton}"
+             AllowsTransparency="True" StaysOpen="False"
+             Closed="OnVolumePopupClosed">
+        <Border Style="{StaticResource StatusPanel}" Width="300">
+          <StackPanel>
+            <TextBlock Text="声音" FontSize="14" FontWeight="SemiBold" />
+            <TextBlock x:Name="VolumeReadout" Opacity="0.65"
+                       Margin="0,12,0,2" />
+            <Slider x:Name="VolumeSlider" Minimum="0" Maximum="100"
+                    SmallChange="1" LargeChange="5"
+                    AutomationProperties.Name="系统主音量"
+                    ValueChanged="OnVolumeChanged" />
+            <CheckBox x:Name="MuteCheck" Content="静音" Margin="8,8,8,10"
+                      Checked="OnMuteChanged" Unchecked="OnMuteChanged" />
+            <Button Style="{StaticResource PanelAction}"
+                    Content="声音设置…" Click="OnSoundSettings" />
+          </StackPanel>
+        </Border>
+      </Popup>
+      <Popup x:Name="CalendarPopup" Placement="Bottom"
+             PlacementTarget="{Binding ElementName=CalendarButton}"
+             AllowsTransparency="True" StaysOpen="False">
+        <Border Style="{StaticResource StatusPanel}" Width="300">
+          <StackPanel>
+            <TextBlock x:Name="CalendarHeading" FontSize="15"
+                       FontWeight="SemiBold" Margin="4,0,0,12" />
+            <Grid Margin="0,0,0,10">
+              <Button Content="‹" FontSize="20" Width="30"
+                      HorizontalAlignment="Left" Click="OnPreviousMonth"
+                      AutomationProperties.Name="上个月" />
+              <TextBlock x:Name="CalendarMonthTitle" FontWeight="SemiBold"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Center" />
+              <Button Content="›" FontSize="20" Width="30"
+                      HorizontalAlignment="Right" Click="OnNextMonth"
+                      AutomationProperties.Name="下个月" />
+            </Grid>
+            <UniformGrid x:Name="WeekdayHeader" Columns="7" Margin="0,0,0,6" />
+            <UniformGrid x:Name="MonthCalendar" Columns="7" Rows="6"
+                         AutomationProperties.Name="顶部栏月历" />
+          </StackPanel>
+        </Border>
+      </Popup>
+      <Popup x:Name="ControlCenterPopup" Placement="Bottom"
+             PlacementTarget="{Binding ElementName=ControlCenterButton}"
+             AllowsTransparency="True" StaysOpen="False">
+        <Border Style="{StaticResource StatusPanel}" Width="320">
+          <StackPanel>
+            <TextBlock Text="控制中心" FontSize="14" FontWeight="SemiBold"
+                       Margin="0,0,0,14" />
+            <UniformGrid Columns="2" Margin="-3,0,-3,10">
+              <Button Click="OnNetwork" Height="76" Margin="3"
+                      Background="#12FFFFFF" AutomationProperties.Name="控制中心网络">
+                <StackPanel>
+                  <TextBlock Text="网络" FontWeight="SemiBold" Margin="0,0,0,5" />
+                  <TextBlock x:Name="NetworkTileStatus" FontSize="11"
+                             Opacity="0.65" />
+                </StackPanel>
+              </Button>
+              <Button Click="OnVolume" Height="76" Margin="3"
+                      Background="#12FFFFFF" AutomationProperties.Name="控制中心声音">
+                <StackPanel>
+                  <TextBlock Text="声音" FontWeight="SemiBold" Margin="0,0,0,5" />
+                  <TextBlock Text="调节音量" FontSize="11" Opacity="0.65" />
+                </StackPanel>
+              </Button>
+            </UniformGrid>
+            <Button Style="{StaticResource PanelAction}" Content="显示桌面"
+                    Click="OnShowDesktop" />
+            <Button Style="{StaticResource PanelAction}" Content="GlassDesk 设置…"
+                    Click="OnOpenSettings" />
+          </StackPanel>
+        </Border>
+      </Popup>
+    </Grid>
+  </Border>
+</Window>

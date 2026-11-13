@@ -16,7 +16,7 @@ public sealed class GlassGeometryContractTests
         {
             const int width = 200;
             const int height = 100;
-            const double radius = 40;
+            const double radius = 24;
             var bounds = new Rect(0, 0, width, height);
             var size = new Size(width, height);
             var dock = new DockWindow
@@ -82,7 +82,8 @@ public sealed class GlassGeometryContractTests
         bitmap.Render(surface);
         var pixels = new byte[(int)bounds.Width * (int)bounds.Height * 4];
         bitmap.CopyPixels(pixels, (int)bounds.Width * 4, 0);
-        Assert.Equal((byte)0, pixels[(5 * (int)bounds.Width + 5) * 4 + 3]);
+        // 外侧采样避开抗锯齿带；较小圆角的 (5,5) 已位于边缘过渡区域。
+        Assert.Equal((byte)0, pixels[3]);
                 Assert.True(pixels[(50 * (int)bounds.Width + 100) * 4 + 3] > 0,
                     "The production GlassSurface should render inside the shared panel boundary.");
         Assert.True(SquircleGlassGeometry.Contains(bounds, radius, new Point(100, 50)));

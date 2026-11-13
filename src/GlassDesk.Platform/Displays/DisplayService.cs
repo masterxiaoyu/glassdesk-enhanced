@@ -17,6 +17,22 @@ namespace GlassDesk.Platform.Displays;
 /// </remarks>
 public static partial class DisplayService
 {
+    /// <summary>设置指定屏幕的工作区；不写入用户持久配置。</summary>
+    internal static bool TrySetWorkArea(PixelRect area)
+    {
+        var rectangle = new Rect
+        {
+            Left = area.X, Top = area.Y,
+            Right = area.Right, Bottom = area.Bottom,
+        };
+        return SetWorkArea(0x002F, 0, ref rectangle, 2);
+    }
+
+    [LibraryImport("user32.dll", EntryPoint = "SystemParametersInfoW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool SetWorkArea(uint action, uint count,
+        ref Rect rectangle, uint flags);
+
     // DPI 感知上下文的伪句柄。它们不是真指针，只是约定值。
     private static readonly nint ContextUnaware = -1;
     private static readonly nint ContextSystemAware = -2;

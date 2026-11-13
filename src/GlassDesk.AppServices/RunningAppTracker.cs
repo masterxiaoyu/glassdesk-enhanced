@@ -208,8 +208,7 @@ public sealed class RunningAppTracker : IDisposable
     }
 
     /// <summary>
-    /// 两组窗口是否等价。只比较句柄集合：窗口的存在与消失才改变
-    /// 「有没有在运行」，同一窗口改标题或挪位置不算。
+    /// 比较窗口句柄、标题和最小化状态，推动任务栏增删及标题更新。
     /// </summary>
     private static bool SameWindowSet(IReadOnlyList<WindowIdentityInfo> left, IReadOnlyList<WindowIdentityInfo> right)
     {
@@ -218,16 +217,18 @@ public sealed class RunningAppTracker : IDisposable
             return false;
         }
 
-        var handles = new HashSet<nint>(left.Select(window => window.Handle));
+        var windows = left.ToDictionary(window => window.Handle);
 
         foreach (var window in right)
         {
-            if (!handles.Remove(window.Handle))
+            if (!windows.Remove(window.Handle, out var previous)
+                || previous.Title != window.Title
+                || previous.IsMinimized != window.IsMinimized)
             {
                 return false;
             }
         }
 
-        return handles.Count == 0;
+        return windows.Count == 0;
     }
 }

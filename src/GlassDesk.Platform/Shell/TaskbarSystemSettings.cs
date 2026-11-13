@@ -10,7 +10,7 @@ public static partial class TaskbarSystemSettings
   /// <summary>读取系统任务栏的自动隐藏状态；Explorer 不在时返回 null。</summary>
   public static bool? ReadAutoHide()
   {
-    if (FindWindow("Shell_TrayWnd", null) == 0) return null;
+    if (WindowsTaskbar.FindExplorerWindow() == 0) return null;
     var data = new Shell32.AppBarData
     {
       Size = (uint)Marshal.SizeOf<Shell32.AppBarData>(),
@@ -22,7 +22,7 @@ public static partial class TaskbarSystemSettings
   /// <summary>读取系统任务栏位置；可选位置由 Windows 版本和推送决定。</summary>
   public static string? ReadPosition()
   {
-    var taskbar = FindWindow("Shell_TrayWnd", null);
+    var taskbar = WindowsTaskbar.FindExplorerWindow();
     if (taskbar == 0) return null;
     var monitor = Display32.MonitorFromWindow(taskbar,
       Display32.MonitorDefaultToNearest);
@@ -62,7 +62,7 @@ public static partial class TaskbarSystemSettings
   public static bool TrySetAutoHide(bool enabled, out string? error)
   {
     error = null;
-    var window = FindWindow("Shell_TrayWnd", null);
+    var window = WindowsTaskbar.FindExplorerWindow();
     if (window == 0)
     {
       error = "Explorer 任务栏尚未就绪。";
@@ -88,8 +88,4 @@ public static partial class TaskbarSystemSettings
     return false;
   }
 
-  [LibraryImport("user32.dll", EntryPoint = "FindWindowW",
-    StringMarshalling = StringMarshalling.Utf16)]
-  private static partial nint FindWindow(string class_name,
-    string? window_name);
 }

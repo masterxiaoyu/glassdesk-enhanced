@@ -46,6 +46,8 @@ public partial class DockWindow : GlassWindow
     public Action? ToggleDesktopIcons { get; set; }
     /// <summary>通过 Dock 右键菜单打开设置，作为托盘入口的替代。</summary>
     public Action? OpenSettings { get; set; }
+    public Action? RestoreNativeTaskbar { get; set; }
+    public Action? ExitApplication { get; set; }
     private System.Windows.Threading.DispatcherTimer? _failureNoticeTimer;
     private readonly DockTileStrip _tileStrip;
 
@@ -105,7 +107,7 @@ public partial class DockWindow : GlassWindow
     {
         InitializeComponent();
         InitializeEntryHover();
-        PanelCornerRadius = new CornerRadius(40);
+        PanelCornerRadius = new CornerRadius(24);
         GlassSurface.IsBackdropActive = () => IsOpticalSurfaceVisible;
 
         _tileStrip = new DockTileStrip();
@@ -113,6 +115,8 @@ public partial class DockWindow : GlassWindow
         _tileStrip.TileContextMenuRequested += OnTileContextMenuRequested;
         _tileStrip.ReorderFinished += (_, _) => RefreshTiles();
         _tileStrip.UnpinRequested += OnUnpinRequested;
+        _tileStrip.StackRequested += (_, pair) =>
+            CombineStack(pair.Source, pair.Target);
         _tileStrip.SetReorderModel(new DockReorderModel(SaveDockOrder));
         TileStripHost.Content = _tileStrip;
 
@@ -121,7 +125,7 @@ public partial class DockWindow : GlassWindow
     }
 
     /// <summary>
-    /// 排序提交的落盘路径：只在这里写一次（R-08），并且**只写应用库里的真实条目**。
+    /// 排序提交的落盘路径：只写一次，保留应用条目与收纳引用。
     /// </summary>
     /// <remarks>
     /// 排序模型给过来的列表本应只含应用磁贴，这里再校验一遍：
@@ -135,7 +139,9 @@ public partial class DockWindow : GlassWindow
             return;
         }
 
-        var sanitized = DockLayoutPolicy.Sanitize(order, id => _services.Library.Find(id) is not null);
+        var sanitized = DockLayoutPolicy.Sanitize(order, id =>
+            _services.Library.Find(id) is not null
+            || DockStacks.Find(_services.Layouts.Dock, id) is not null);
 
         _services.Layouts.Dock.PinnedItemIds = sanitized;
         _services.Layouts.SaveDock();
@@ -161,7 +167,9 @@ public partial class DockWindow : GlassWindow
         }
 
         var pinned = _services.Layouts.Dock.PinnedItemIds;
-        var sanitized = DockLayoutPolicy.Sanitize(pinned, id => _services.Library.Find(id) is not null);
+        var sanitized = DockLayoutPolicy.Sanitize(pinned, id =>
+            _services.Library.Find(id) is not null
+            || DockStacks.Find(_services.Layouts.Dock, id) is not null);
 
         if (DockLayoutPolicy.SameOrder(pinned, sanitized))
         {
@@ -202,6 +210,9 @@ public partial class DockWindow : GlassWindow
         {
             return;
         }
+
+        if (DockStacks.Find(_services.Layouts.Dock, entryId) is { } stack)
+            _services.Layouts.Dock.ToolGroups.Remove(stack);
 
         try
         {
@@ -274,6 +285,13 @@ public partial class DockWindow : GlassWindow
             && e.Data.GetData(LauncherDragContract.SlotDataFormat) is string itemId)
         {
             e.Handled = true;
+            var target = _tileStrip.StackTargetAt(e.GetPosition(_tileStrip), itemId);
+            if (target is not null && _services.Library.Find(itemId) is not null)
+            {
+                CombineStack(itemId, target);
+                RefreshTiles();
+                return;
+            }
             PinLauncherItem(itemId, e);
             return;
         }
@@ -371,7 +389,7 @@ public partial class DockWindow : GlassWindow
     public DockSettings Settings => _dockSettings?.Settings ?? new DockSettings();
 
     /// <summary>
-    /// 当前磁贴总数（固定项 + 三个内置入口）。诊断与测试用。
+    /// 当前应用磁贴总数（固定项 + 临时运行窗口）。诊断与测试用。
     /// </summary>
     public int TileCount => _models.Count;
 
@@ -429,8 +447,8 @@ public partial class DockWindow : GlassWindow
     /// <summary>Dock 使用栏自身的圆角半径，而不是启动台的。</summary>
     protected override double ResolveCornerRadius(AppearanceSettings appearance)
     {
-        ArgumentNullException.ThrowIfNull(appearance);
-        return Math.Max(40, appearance.DockCornerRadius) * DockScale;
+        // macOS 式悬浮栏使用圆角矩形，不再把整条栏画成胶囊。
+        return 24 * DockScale;
     }
 
     // ---- 磁贴 ----
@@ -458,9 +476,15 @@ public partial class DockWindow : GlassWindow
         {
             foreach (var id in _services.Layouts.Dock.PinnedItemIds)
             {
+                if (DockStacks.Find(_services.Layouts.Dock, id) is { } group)
+                {
+                    _models.Add(CreateStackTile(group));
+                    continue;
+                }
                 var entry = _services.Library.Find(id);
 
-                if (entry is null || !entry.IsUsable)
+                if (entry is null || !entry.IsUsable
+                    || TaskbarWindowPolicy.IsInputExperience(entry.Target))
                 {
                     continue;
                 }
@@ -469,6 +493,7 @@ public partial class DockWindow : GlassWindow
             }
         }
 
+        AppendRunningWindows();
         _tileStrip.SetTiles(_models);
         ApplyStripMetrics();
     }
@@ -494,7 +519,7 @@ public partial class DockWindow : GlassWindow
             IconSize = DockSettings.FixedIconSize * DockScale,
             TileMargin = new Thickness(DockSettings.FixedIconSpacing * DockScale / 2, 0, DockSettings.FixedIconSpacing * DockScale / 2, 0),
             IsMissing = entry.IsTargetMissing,
-            RunningVisibility = tracker.IsRunning(entry)
+            RunningVisibility = settings.ShowRunningIndicator && tracker.IsRunning(entry)
                 ? Visibility.Visible
                 : Visibility.Collapsed,
         };
@@ -512,6 +537,7 @@ public partial class DockWindow : GlassWindow
         var settings = Settings;
         var display = CurrentPrimaryDisplay;
         var scale = DockScale;
+        TrashTile.Width = TrashTile.Height = 43 * scale;
         DockContentLayer.Margin = new Thickness(10 * scale, 8 * scale, 10 * scale, 8 * scale);
         if ((LauncherButton.Visibility == Visibility.Visible) != settings.ShowLauncherEntry
             || (ThisPcButton.Visibility == Visibility.Visible) != settings.ShowThisPcEntry
@@ -521,17 +547,16 @@ public partial class DockWindow : GlassWindow
         ThisPcButton.Visibility = settings.ShowThisPcEntry ? Visibility.Visible : Visibility.Collapsed;
         DesktopIconsButton.Visibility = settings.ShowDesktopIconsEntry ? Visibility.Visible : Visibility.Collapsed;
         foreach (var button in new[] { LauncherButton, ThisPcButton,
-            DesktopIconsButton, ToolboxButton })
+            DesktopIconsButton, TrashButton })
         {
             button.Width = 48 * scale;
             button.Height = 64 * scale;
             button.Margin = new Thickness(0, 0, 8 * scale, 0);
         }
         LaunchpadTile.Width = LaunchpadTile.Height = ThisPcTile.Width = ThisPcTile.Height
-            = DesktopIconsTile.Width = DesktopIconsTile.Height
-            = ToolboxTile.Width = ToolboxTile.Height = 48 * scale;
-        LaunchpadTile.CornerRadius = new CornerRadius(16 * scale);
-        PanelCornerRadius = new CornerRadius(40 * scale);
+            = DesktopIconsTile.Width = DesktopIconsTile.Height = 48 * scale;
+        LaunchpadTile.CornerRadius = new CornerRadius(13 * scale);
+        PanelCornerRadius = new CornerRadius(24 * scale);
 
         var contentLimit = display is null
             ? 0.0
@@ -552,7 +577,8 @@ public partial class DockWindow : GlassWindow
         ? Math.Clamp(Settings.SizeScale, DockSettings.MinimumSizeScale, DockSettings.MaximumSizeScale) : 1;
 
     private double BuiltinEntryWidthDip => 56 * (1 + (Settings.ShowLauncherEntry ? 1 : 0)
-        + (Settings.ShowThisPcEntry ? 1 : 0) + (Settings.ShowDesktopIconsEntry ? 1 : 0));
+        + (Settings.ShowThisPcEntry ? 1 : 0) + (Settings.ShowDesktopIconsEntry ? 1 : 0))
+        + 14;
 
     private double ResolveEffectiveFrameLengthDip(double requested, DisplayInfo? display)
     {
@@ -626,7 +652,31 @@ public partial class DockWindow : GlassWindow
 
     /// <summary>磁贴点击：前台应用最小化；后台应用前置；未运行时启动。</summary>
     private void OnTileClicked(object? sender, string entryId)
-        => OpenEntry(entryId, minimizeIfForeground: true);
+    {
+        if (_services is not null
+            && DockStacks.Find(_services.Layouts.Dock, entryId) is { } stack)
+        {
+            ShowStack(stack);
+            return;
+        }
+        var tile = _models.Find(model => model.EntryId == entryId);
+        if (tile is { WindowHandle: not 0 })
+        {
+            if (tile.WindowHandles.Count > 1 && _services is not null)
+            {
+                ShowWindowChooser(_services.Running.LastWindows
+                    .Where(window => tile.WindowHandles.Contains(window.Handle))
+                    .Select(window => new WindowCandidate
+                    {
+                        Handle = window.Handle, Title = window.Title,
+                    }).ToArray());
+                return;
+            }
+            ActivateTaskbarWindow(tile.WindowHandle, true);
+            return;
+        }
+        OpenEntry(entryId, minimizeIfForeground: true);
+    }
 
     private void OpenEntry(string entryId, bool minimizeIfForeground)
     {
@@ -830,6 +880,18 @@ public partial class DockWindow : GlassWindow
     /// </remarks>
     private void OnTileContextMenuRequested(object? sender, string entryId)
     {
+        if (_services is not null
+            && DockStacks.Find(_services.Layouts.Dock, entryId) is { } stack)
+        {
+            ShowStack(stack, editing: true);
+            return;
+        }
+        var tile = _models.Find(model => model.EntryId == entryId);
+        if (tile is { WindowHandle: not 0 })
+        {
+            ShowTaskbarWindowMenu(tile);
+            return;
+        }
         if (_services is null)
         {
             return;
@@ -894,6 +956,11 @@ public partial class DockWindow : GlassWindow
             (PresentationSource.FromVisual(menu) as
                 System.Windows.Interop.HwndSource)?.Handle ?? 0;
         _ = menu.Items.Add(MenuItem("设置…", () => OpenSettings?.Invoke()));
+        if (RestoreNativeTaskbar is not null)
+            _ = menu.Items.Add(MenuItem("恢复 Windows 原生任务栏",
+                RestoreNativeTaskbar));
+        if (ExitApplication is not null)
+            _ = menu.Items.Add(MenuItem("退出 GlassDesk", ExitApplication));
         menu.Closed += (_, _) =>
         {
             _autoHide?.PopSuppress(DateTime.UtcNow);
@@ -1150,17 +1217,13 @@ public partial class DockWindow : GlassWindow
         {
             if (_services is null || _performanceSleepRequested)
             {
+                _tilesDirty = true;
                 return;
             }
 
-            foreach (var tile in _models)
-            {
-                var entry = _services.Library.Find(tile.EntryId);
-
-                tile.RunningVisibility = entry is not null && _services.Running.IsRunning(entry)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-            }
+            // 窗口出现、关闭或标题变化都会改变临时任务栏项。
+            // 拖放期间延后到 ReorderFinished，避免重建拖放源控件。
+            if (!_tileStrip.IsDragging) RefreshTiles();
         });
     }
 
@@ -1301,7 +1364,8 @@ public partial class DockWindow : GlassWindow
             display.WorkArea,
             Settings.Placement,
             Settings.OffsetX,
-            Settings.OffsetY,
+            Settings.OffsetY + (Settings.Placement == DockPlacement.TopCenter
+                ? 12 : -12) * DockScale,
             widthPixels,
             heightPixels,
             display.Dpi);

@@ -312,7 +312,7 @@ public static class WindowLocator
         return (extendedStyle & WsExToolWindow) == 0;
     }
 
-    private static string? TryReadImagePath(uint processId)
+    internal static string? TryReadImagePath(uint processId)
     {
         var handle = Kernel32.OpenProcess(Kernel32.ProcessQueryLimitedInformation, false, processId);
         if (handle == 0)

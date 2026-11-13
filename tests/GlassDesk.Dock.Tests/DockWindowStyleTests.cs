@@ -49,7 +49,7 @@ public class DockWindowStyleTests
                 Assert.Equal(DockSettings.FixedIconSize, window.Settings.IconSize);
                 Assert.Equal(DockSettings.FixedIconSpacing, window.Settings.IconSpacing);
                 Assert.Equal(1.35, window.Settings.MagnificationPeak);
-                Assert.Equal(40, window.PanelCornerRadius.TopLeft);
+                Assert.Equal(24, window.PanelCornerRadius.TopLeft);
             }
             finally
             {

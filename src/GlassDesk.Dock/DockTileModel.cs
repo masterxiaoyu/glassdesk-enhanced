@@ -20,6 +20,10 @@ public sealed class DockTileModel : INotifyPropertyChanged
     /// <summary>应用库条目 id。点击时据此走启动/激活。</summary>
     public string EntryId { get; init; } = string.Empty;
 
+    /// <summary>临时任务栏窗口；不参与固定应用排序或布局保存。</summary>
+    public nint WindowHandle { get; init; }
+    public IReadOnlyList<nint> WindowHandles { get; init; } = [];
+
     /// <summary>内置入口的符号字形（Segoe Fluent Icons）。普通磁贴为 null（用图标）。</summary>
     public string? Glyph { get; init; }
 

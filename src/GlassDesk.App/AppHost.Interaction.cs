@@ -60,7 +60,7 @@ internal sealed partial class AppHost
 
         var error = _interaction.Initialize();
         if (error is not null) ReportInteractionError(error);
-        else _settings.ShowInteractionStatus("快捷操作服务已就绪。");
+        else _settings.ShowInteractionStatus("");
         ApplyDisplayRuntimeSettings(_data.Settings.Current.Display);
 
         SystemEvents.DisplaySettingsChanged += OnSystemDisplaySettingsChanged;
@@ -181,6 +181,7 @@ internal sealed partial class AppHost
             _interaction?.RefreshDisplays();
             _performanceFullscreen?.Refresh();
             _dock?.RefreshDisplayPlacement();
+            top_bar_?.RefreshPlacement();
             _launcher?.RefreshDisplayPlacement();
             if (_settings?.IsVisible == true) _settings.PositionOnPrimary();
             foreach (Window window in _application.Windows)

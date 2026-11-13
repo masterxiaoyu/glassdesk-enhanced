@@ -15,6 +15,8 @@ internal static class CompatibilityProbe
     [STAThread]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--taskbar-fixture")
+            return GlassDesk.Compatibility.TaskbarFixture.Run(args[1]);
         if (args.Length >= 2 && args[0] == "--capture-protocol-fixture") return CaptureProtocolFixture.Run(args[1]);
         if (args.Length == 7 && args[0] == "--compare-live-region")
         {

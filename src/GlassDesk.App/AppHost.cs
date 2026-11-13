@@ -239,6 +239,7 @@ internal sealed partial class AppHost : IDisposable
         _deferredCommandGate.Close();
 
         DisposeUpdates();
+        DisposeTaskbarIntegration();
 
         if (ThemeService.Current is { } theme)
         {
@@ -368,6 +369,8 @@ internal sealed partial class AppHost : IDisposable
             ToggleLauncherFromDock(_launcher, source, ShowLauncher));
         _dock.ToggleDesktopIcons = () => ExecuteInteraction(GlassDesk.Core.Input.InputAction.ToggleDesktopIcons);
         _dock.OpenSettings = ShowSettings;
+        _dock.ExitApplication = ExitApplication;
+        _dock.RestoreNativeTaskbar = RestoreNativeTaskbar;
         _launcher.AttachServices(_services!, _loadReport?.LibraryStatus != LoadStatus.Unrecoverable);
         _launcher.InternalDragStarted += (_, _) => _dock?.RaiseAboveLauncherDuringDrag();
         _launcher.InternalDragFinished += (_, _) => _launcher?.RaiseAboveDockAfterDrag();
@@ -395,6 +398,7 @@ internal sealed partial class AppHost : IDisposable
         }
 
         _dock.Show();
+        InitializeTaskbarIntegration();
 
         if (StartupIntent.ShouldOpenLauncher(_options))
         {

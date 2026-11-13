@@ -57,8 +57,15 @@
                 ToolTip="启动台" AutomationProperties.Name="打开启动台"
                 MouseEnter="OnEntryMouseEnter" MouseLeave="OnEntryMouseLeave"
                 Click="OnLauncherButtonClick">
-          <controls:PhoneBorder x:Name="LaunchpadTile" Width="48" Height="48" CornerRadius="16"
-                     Background="Transparent" BorderThickness="0">
+          <controls:PhoneBorder x:Name="LaunchpadTile" Width="48" Height="48"
+                                CornerRadius="13" BorderBrush="#35FFFFFF"
+                                BorderThickness="0.6">
+            <controls:PhoneBorder.Background>
+              <LinearGradientBrush StartPoint="0,0" EndPoint="0.8,1">
+                <GradientStop Color="#FF667384" Offset="0" />
+                <GradientStop Color="#FF363E4D" Offset="1" />
+              </LinearGradientBrush>
+            </controls:PhoneBorder.Background>
             <controls:LaunchpadGlyph OutlineBrush="{Binding DockBuiltinIconBrush, RelativeSource={RelativeSource AncestorType=Window}}"
                                     IsFilled="{Binding LaunchpadIconFilled, RelativeSource={RelativeSource AncestorType=Window}}" />
           </controls:PhoneBorder>
@@ -71,7 +78,8 @@
                 Click="OnThisPcButtonClick">
           <Viewbox x:Name="ThisPcTile" Width="48" Height="48" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Canvas Width="48" Height="48">
-              <Path Data="M6,6 H42 Q45,6 45,9 V29 Q45,32 42,32 H6 Q3,32 3,29 V9 Q3,6 6,6 Z M24,32 V39 M15,40 H33"
+              <Path x:Name="ThisPcFace"
+                    Data="M6,6 H42 Q45,6 45,9 V29 Q45,32 42,32 H6 Q3,32 3,29 V9 Q3,6 6,6 Z M24,32 V39 M15,40 H33"
                     Fill="Transparent"
                     Stroke="{Binding DockBuiltinIconBrush, RelativeSource={RelativeSource AncestorType=Window}}"
                     StrokeThickness="3.5" StrokeLineJoin="Round"
@@ -102,26 +110,27 @@
             </Canvas>
           </Viewbox>
         </Button>
-        <Button x:Name="ToolboxButton" Width="48" Height="64"
-                Margin="0,0,8,0" Padding="0"
+        <ContentControl x:Name="TileStripHost"
+                        AutomationProperties.Name="固定应用和运行窗口"
+                        Focusable="False" />
+        <Border Width="1" Height="30" Margin="8,0,5,0"
+                Background="#38FFFFFF" />
+        <Button x:Name="TrashButton" Width="48" Height="64" Padding="0"
                 Style="{StaticResource DockEntryButton}"
-                ToolTip="软件聚合工具栏" AutomationProperties.Name="打开软件聚合工具栏"
-                MouseEnter="OnEntryMouseEnter" MouseLeave="OnEntryMouseLeave"
-                Click="OnToolboxButtonClick">
-          <Viewbox x:Name="ToolboxTile" Width="48" Height="48"
-                   HorizontalAlignment="Center" VerticalAlignment="Center">
+                ToolTip="废纸篓（Windows 回收站）" Click="OnTrashClick"
+                AutomationProperties.Name="打开回收站">
+          <Viewbox x:Name="TrashTile" Width="43" Height="43">
             <Canvas Width="48" Height="48">
-              <Path Data="M7,7 H20 V20 H7 Z M28,7 H41 V20 H28 Z
-                          M7,28 H20 V41 H7 Z M28,28 H41 V41 H28 Z"
-                    Fill="Transparent"
-                    Stroke="{Binding DockBuiltinIconBrush, RelativeSource={RelativeSource AncestorType=Window}}"
-                    StrokeThickness="2.5" StrokeLineJoin="Round" />
+              <Path Data="M11,12 H37 L34,43 Q24,47 14,43 Z"
+                    Fill="#C4CDD3" Stroke="#EAF0F4" StrokeThickness="2" />
+              <Path Data="M8,10 Q24,4 40,10 L39,14 Q24,18 9,14 Z"
+                    Fill="#E5ECF0" Stroke="#9CAAB5" StrokeThickness="2" />
+              <Path Data="M19,21 V38 M25,21 V39 M31,21 L30,38"
+                    Stroke="#7E909F" StrokeThickness="2" />
             </Canvas>
           </Viewbox>
         </Button>
-        <ContentControl x:Name="TileStripHost"
-                        AutomationProperties.Name="固定的应用"
-                        Focusable="False" />
+
       </StackPanel>
 
       <TextBlock

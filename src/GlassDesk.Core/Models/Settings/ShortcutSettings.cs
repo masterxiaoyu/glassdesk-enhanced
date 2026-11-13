@@ -57,6 +57,9 @@ public enum HotCorner
 /// <summary>键盘与指针触发方式。</summary>
 public sealed class ShortcutSettings
 {
+    /// <summary>单独按下并松开 Win 时打开窗口切换界面。</summary>
+    public bool WinKeyWindowSwitcher { get; set; }
+
     public GlassDesk.Core.Input.InputAction MouseBackAction { get; set; } = GlassDesk.Core.Input.InputAction.ToggleLauncher;
 
     public GlassDesk.Core.Input.InputAction MouseForwardAction { get; set; }

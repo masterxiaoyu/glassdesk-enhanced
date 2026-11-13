@@ -41,6 +41,8 @@ public sealed class GlassDeskSettings
     {
         Appearance ??= new AppearanceSettings();
         Dock ??= new DockSettings();
+        // 旧版本允许两个开关独立设置；现在统一由顶部栏模式决定原生可见性。
+        Dock.HideNativeTaskbar = Dock.ShowTopBar;
         Launcher ??= new LauncherSettings();
         Shortcuts ??= new ShortcutSettings();
         Display ??= new DisplaySettings();

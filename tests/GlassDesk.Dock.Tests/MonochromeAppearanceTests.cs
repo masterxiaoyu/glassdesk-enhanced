@@ -33,11 +33,11 @@ public sealed class MonochromeAppearanceTests
             for (var y = 0; y < 3; y++)
             for (var x = 0; x < 3; x++)
             {
-                var pixelX = (int)((10 + x * 14) * dpi / 96);
-                var pixelY = (int)((10 + y * 14) * dpi / 96);
+                var pixelX = (int)((13 + x * 11) * dpi / 96);
+                var pixelY = (int)((13 + y * 11) * dpi / 96);
                 Assert.Equal(255, pixels[(pixelY * width + pixelX) * 4 + 3]);
             }
-            var gapX = (int)(17 * dpi / 96); var gapY = (int)(10 * dpi / 96);
+            var gapX = (int)(18 * dpi / 96); var gapY = (int)(13 * dpi / 96);
             Assert.Equal(0, pixels[(gapY * width + gapX) * 4 + 3]);
         });
     }
@@ -78,7 +78,8 @@ public sealed class MonochromeAppearanceTests
 
                 var glyph = Assert.IsType<LaunchpadGlyph>(Assert.IsType<PhoneBorder>(dock.FindName("LaunchpadTile")).Child);
                 AssertColor(Colors.Black, glyph.OutlineBrush);
-                AssertColor(Colors.Black, ((System.Windows.Shapes.Path)((Canvas)((Viewbox)dock.FindName("ThisPcTile")).Child).Children[0]).Stroke);
+                AssertColor(Colors.Black, Assert.IsType<System.Windows.Shapes.Path>(
+                    dock.FindName("ThisPcFace")).Stroke);
                 foreach (System.Windows.Shapes.Path path in ((Canvas)((Viewbox)dock.FindName("DesktopIconsTile")).Child).Children)
                     AssertColor(Colors.Black, path.Stroke ?? path.Fill);
                 var tiles = (UniformGrid)launcher.FindName("TileGrid");

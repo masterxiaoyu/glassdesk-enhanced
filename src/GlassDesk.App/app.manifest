@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
   <assemblyIdentity version="1.0.0.0" name="GlassDesk.app" type="win32" />
+  <msix xmlns="urn:schemas-microsoft-com:msix.v1"
+        publisher="CN=GlassDesk Preview"
+        packageName="GlassDesk.Desktop.Preview" applicationId="GlassDesk" />
 
   <!--
     显式声明 PerMonitorV2。这一点不能省。

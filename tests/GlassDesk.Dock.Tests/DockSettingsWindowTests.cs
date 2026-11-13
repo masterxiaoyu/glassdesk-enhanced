@@ -43,8 +43,10 @@ public class DockSettingsWindowTests
 
                 Assert.Equal(1, calls);
                 Assert.True(Assert.IsType<Button>(window.FindName("UninstallButton")).IsEnabled);
-                Assert.Contains(@"D:\GlassDesk\unins000.exe",
-                    Assert.IsType<TextBlock>(window.FindName("InstallationStatus")).Text);
+                var status = Assert.IsType<TextBlock>(
+                    window.FindName("InstallationStatus")).Text;
+                Assert.Equal("已安装 · 卸载时保留用户数据", status);
+                Assert.DoesNotContain("旧的登记状态", status);
             }
             finally
             {

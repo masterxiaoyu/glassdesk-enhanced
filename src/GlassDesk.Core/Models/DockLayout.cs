@@ -15,6 +15,9 @@ public sealed class DockLayout
 
     /// <summary>Dock 工具栏中的自定义软件聚合，按显示顺序保存。</summary>
     public List<DockToolGroup> ToolGroups { get; set; } = [];
+
+    /// <summary>顶部栏常驻托盘图标，使用稳定身份并保留拖放顺序。</summary>
+    public List<string> TopBarItemIds { get; set; } = [];
 }
 
 /// <summary>一组由用户选择的应用库条目，不复制软件路径或图标。</summary>

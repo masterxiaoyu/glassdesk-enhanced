@@ -259,7 +259,8 @@ public static class IconExtractor
     }
 
     /// <summary>把一个 <c>HICON</c> 读成 BGRA 像素。</summary>
-    private static ExtractedIcon? FromIconHandle(nint icon)
+    /// <summary>复制借用的图标像素；原句柄仍归调用方所有。</summary>
+    public static ExtractedIcon? FromIconHandle(nint icon)
     {
         if (icon == 0 || !User32.GetIconInfo(icon, out var info))
         {

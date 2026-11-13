@@ -50,9 +50,13 @@ public sealed class LayoutStore
         Dock = outcome.Value;
         Dock.PinnedItemIds ??= [];
         Dock.ToolGroups ??= [];
+        Dock.TopBarItemIds ??= [];
         foreach (var group in Dock.ToolGroups)
         {
             group.ItemIds ??= [];
+            // 旧版独立工具栏的分组转为可排序的收纳磁贴。
+            var id = DockStacks.Prefix + group.Id;
+            if (!Dock.PinnedItemIds.Contains(id)) Dock.PinnedItemIds.Add(id);
         }
         _lastSavedDock = CloneDock(Dock);
         return outcome;
@@ -82,6 +86,7 @@ public sealed class LayoutStore
             // 保存失败时同时恢复固定项和工具栏，避免内存与磁盘内容分叉。
             Dock.PinnedItemIds = [.. _lastSavedDock.PinnedItemIds];
             Dock.ToolGroups = CloneDock(_lastSavedDock).ToolGroups;
+            Dock.TopBarItemIds = [.. _lastSavedDock.TopBarItemIds];
             throw;
         }
     }
@@ -89,6 +94,7 @@ public sealed class LayoutStore
     private static DockLayout CloneDock(DockLayout source) => new()
     {
         PinnedItemIds = [.. source.PinnedItemIds],
+        TopBarItemIds = [.. source.TopBarItemIds],
         ToolGroups = source.ToolGroups.Select(group => new DockToolGroup
         {
             Id = group.Id,
@@ -169,6 +175,8 @@ public sealed class LayoutStore
                 string.Equals(id, itemId, StringComparison.Ordinal));
         }
 
+        foreach (var group in Dock.ToolGroups.Where(group => group.ItemIds.Count == 0))
+            Dock.PinnedItemIds.Remove(DockStacks.Prefix + group.Id);
         removed += Dock.ToolGroups.RemoveAll(group => group.ItemIds.Count == 0);
 
         foreach (var page in Launcher.Pages)

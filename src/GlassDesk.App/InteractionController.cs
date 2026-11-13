@@ -5,6 +5,7 @@ using GlassDesk.Core.Models.Settings;
 using GlassDesk.Core.Storage;
 using GlassDesk.Platform.Displays;
 using GlassDesk.Platform.Shell;
+using GlassDesk.Platform.Input;
 
 namespace GlassDesk.App;
 
@@ -18,6 +19,7 @@ internal sealed class InteractionController : IDisposable
     private readonly InteractionSettingsService _settings;
     private readonly DesktopIconSession _desktopIcons = new();
     private bool _disposed;
+    private WinKeyWindowSwitcher? win_key_switcher_;
     private volatile bool _desktopAvailable;
     private volatile bool _launcherVisible;
     private volatile bool _canNavigatePages;
@@ -63,8 +65,30 @@ internal sealed class InteractionController : IDisposable
         shortcuts.MouseSideButtonsEnabled = false;
         var needsDesktop = shortcuts.ToggleDesktopIcons.Enabled;
         if (needsDesktop && !_desktopAvailable) return "当前 Windows 桌面图标状态不可读，已拒绝启用相关动作。";
+        WinKeyWindowSwitcher? new_switcher = null;
+        if (shortcuts.WinKeyWindowSwitcher && win_key_switcher_ is null)
+        {
+          new_switcher = new WinKeyWindowSwitcher(() =>
+            _dispatcher.BeginInvoke(() =>
+            {
+              if (!_disposed && !WindowsShellCommands.OpenWindowSwitcher())
+                _reportError("无法打开窗口切换界面，请检查前台程序权限。");
+            }));
+          if (!new_switcher.TryStart(out var hook_error))
+            return $"无法启用 Win 键窗口切换（系统错误 {hook_error}）。";
+        }
         var error = _settings.Apply(shortcuts, display, persist);
-        if (error is not null) return error;
+        if (error is not null)
+        {
+          new_switcher?.Dispose();
+          return error;
+        }
+        if (new_switcher is not null) win_key_switcher_ = new_switcher;
+        if (!shortcuts.WinKeyWindowSwitcher)
+        {
+          win_key_switcher_?.Dispose();
+          win_key_switcher_ = null;
+        }
         RefreshDisplays();
         return null;
     }
@@ -129,6 +153,7 @@ internal sealed class InteractionController : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
+        win_key_switcher_?.Dispose();
         _settings.Dispose();
         _desktopIcons.Dispose();
     }

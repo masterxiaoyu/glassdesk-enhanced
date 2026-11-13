@@ -69,7 +69,11 @@ internal static partial class Shell32
 
     /// <summary>查询任务栏状态。<see cref="AppBarData.Size"/> 必须先填好。</summary>
     [LibraryImport("shell32.dll", EntryPoint = "SHAppBarMessage")]
-    internal static partial nuint SHAppBarMessage(uint message, ref AppBarData data);
+    internal static partial nuint SHAppBarMessageNative(uint message,
+        ref AppBarData data);
+
+    internal static nuint SHAppBarMessage(uint message, ref AppBarData data)
+        => Shell.SystemTrayBridge.SendAppBarMessage(message, ref data);
 
     // ---- 已知文件夹 ----
 

@@ -27,6 +27,17 @@ public sealed class DockSettings
     public bool ShowThisPcEntry { get; set; } = true;
     public bool ShowDesktopIconsEntry { get; set; } = true;
 
+    /// <summary>任务栏集成：未固定的运行窗口和 Windows 系统入口。</summary>
+    public bool ShowRunningWindows { get; set; } = true;
+    /// <summary>旧版底部系统入口字段，仅用于读取旧配置。</summary>
+    public bool ShowSystemControls { get; set; }
+
+    /// <summary>任务栏模式：true 使用顶部栏，false 使用 Windows 原生栏。</summary>
+    public bool ShowTopBar { get; set; }
+
+    /// <summary>旧配置兼容字段；加载保存时与 ShowTopBar 同步。</summary>
+    public bool HideNativeTaskbar { get; set; }
+
     /// <summary>
     /// Dock 玻璃外框的横向长度，单位为 DIP。零表示继续按内容自动调整，
     /// 正数表示固定外框长度；图标尺寸与 Dock 厚度不受此值影响。

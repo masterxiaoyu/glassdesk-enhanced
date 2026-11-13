@@ -122,7 +122,14 @@ public sealed class ShortcutRecorderTests
                 reloaded.Load();
                 Assert.Equal("Ctrl+Shift+D", reloaded.Current.Shortcuts.ToggleLauncher.Describe());
                 Assert.False(reloaded.Current.Shortcuts.HideLauncher.Enabled);
+                var win_key = Assert.IsType<CheckBox>(
+                    window.FindName("WinKeyWindowSwitcherCheck"));
+                win_key.IsChecked = true;
+                reloaded.Load();
+                Assert.True(reloaded.Current.Shortcuts.WinKeyWindowSwitcher);
                 window.InteractionSettingsApply = (_, _) => "快捷键已被占用";
+                win_key.IsChecked = false;
+                Assert.True(win_key.IsChecked);
                 recorder.BeginRecording();
                 recorder.CaptureKey(Key.Space, ModifierKeys.Alt);
                 Assert.Equal("Ctrl+Shift+D", recorder.Text);

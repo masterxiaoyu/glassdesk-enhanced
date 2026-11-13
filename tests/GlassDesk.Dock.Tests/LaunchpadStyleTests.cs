@@ -90,9 +90,11 @@ public sealed class LaunchpadStyleTests
             var pixels = new byte[width * bitmap.PixelHeight * 4]; bitmap.CopyPixels(pixels, width * 4, 0);
             for (var y = 0; y < 3; y++)
             for (var x = 0; x < 3; x++)
-                Assert.Equal(filled ? 255 : 0, pixels[(((10 + y * 14) * scale) * width + (10 + x * 14) * scale) * 4 + 3]);
-            Assert.Equal(255, pixels[((10 * scale) * width + 5 * scale) * 4 + 3]);
-            Assert.Equal(0, pixels[((10 * scale) * width + 17 * scale) * 4 + 3]);
+                Assert.Equal(filled ? 255 : 0,
+                    pixels[(((13 + y * 11) * scale) * width
+                        + (13 + x * 11) * scale) * 4 + 3]);
+            Assert.Equal(255, pixels[((13 * scale) * width + 9 * scale) * 4 + 3]);
+            Assert.Equal(0, pixels[((13 * scale) * width + 18 * scale) * 4 + 3]);
         }
     }
 

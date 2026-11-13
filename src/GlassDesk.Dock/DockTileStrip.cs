@@ -87,6 +87,10 @@ public sealed class DockTileStrip : Border
     /// <summary>磁贴被拖出栏外（D-03）：请求取消固定，不删除库条目。</summary>
     public event EventHandler<string>? UnpinRequested;
 
+    public event EventHandler<(string Source, string Target)>? StackRequested;
+    private string? stack_target_;
+    private DateTime stack_hover_since_;
+
     /// <summary>排序状态机由宿主注入：落盘委托在宿主手里（经布局存储保存一次）。</summary>
     private DockReorderModel? _reorder;
     private string? _pressedEntryId;
@@ -125,7 +129,7 @@ public sealed class DockTileStrip : Border
     }
 
     /// <summary>
-    /// 参与排序的条目 id（<strong>只有应用库里的真实条目</strong>）。
+    /// 参与排序的应用条目和收纳 id；运行窗口不参与。
     /// </summary>
     /// <remarks>
     /// 内置入口（启动台、显示桌面、回收站）固定在独立区域：不参与排序，
@@ -210,7 +214,8 @@ public sealed class DockTileStrip : Border
 
         foreach (var model in _models)
         {
-            if (DockLayoutPolicy.IsEntryTile(model.EntryId))
+            if (DockLayoutPolicy.IsEntryTile(model.EntryId)
+                || model.WindowHandle != 0)
             {
                 break;
             }
@@ -394,6 +399,7 @@ public sealed class DockTileStrip : Border
         var candidateIds = ReorderCandidateIds.ToArray();
         _dragStartIndex = Array.IndexOf(candidateIds, draggedEntryId);
         _reorder.Begin(candidateIds);
+        stack_target_ = null;
 
         var data = new DataObject(TileDragFormat, draggedEntryId);
         data.SetData(DataFormats.Serializable, draggedEntryId);
@@ -526,6 +532,7 @@ public sealed class DockTileStrip : Border
 
         e.Effects = DragDropEffects.Move;
         e.Handled = true;
+        UpdateStackTarget(e, entryId);
         PreviewReorderAtEventPoint(e, entryId);
     }
 
@@ -540,6 +547,16 @@ public sealed class DockTileStrip : Border
 
         e.Handled = true;
         _droppedInStrip = true;
+
+        // 中心停留后叠放；边缘继续排序，避免经过图标时误收纳。
+        var target = StackTargetAt(e.GetPosition(_scroller), entryId);
+        if (target is not null && target == stack_target_
+            && DateTime.UtcNow - stack_hover_since_ >= TimeSpan.FromMilliseconds(400))
+        {
+            _ = _reorder.Cancel();
+            StackRequested?.Invoke(this, (entryId, target));
+            return;
+        }
 
         // OLE 可能在松手前没有再派发一次 DragOver。Drop 自带最终指针坐标，
         // 用它刷新预览后再提交，避免把上一次 DragOver 的旧位置落盘。
@@ -578,6 +595,33 @@ public sealed class DockTileStrip : Border
         var insertionIndex = IndexForInsert(ToContentX(viewportX));
         var targetIndex = insertionIndex > _dragStartIndex ? insertionIndex - 1 : insertionIndex;
         _reorder.PreviewMove(entryId, targetIndex);
+    }
+
+    public string? StackTargetAt(Point point, string source)
+    {
+        if (point.Y < 0 || point.Y > ActualHeight) return null;
+        var hit = ResolveHitAtViewportX(point.X);
+        if (hit < 0 || hit >= AppTileCount) return null;
+        var tile = _models[hit];
+        var geometry = _paintedGeometry[hit];
+        return tile.EntryId != source
+            && Math.Abs(ToContentX(point.X) - geometry.Center) < _iconSize * .3
+            ? tile.EntryId : null;
+    }
+
+    private void UpdateStackTarget(DragEventArgs e, string source)
+    {
+        var target = StackTargetAt(e.GetPosition(_scroller), source);
+        if (target == stack_target_) return;
+        stack_target_ = target;
+        stack_hover_since_ = DateTime.UtcNow;
+        // 叠放目标出现边框，提示松手后会收纳。
+        for (var index = 0; index < _tiles.Count; index++)
+        {
+            _tiles[index].BorderBrush = _models[index].EntryId == target
+                ? Brushes.DodgerBlue : Brushes.Transparent;
+            _tiles[index].BorderThickness = new Thickness(2);
+        }
     }
 
     private bool IsInternalTileDrag(IDataObject data, out string entryId)

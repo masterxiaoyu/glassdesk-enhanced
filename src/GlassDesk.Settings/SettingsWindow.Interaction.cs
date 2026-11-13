@@ -21,6 +21,7 @@ public partial class SettingsWindow
     private Func<bool?>? _desktopIconsRead;
     private Func<bool, string?>? _desktopIconsSet;
     private bool _loadingTaskbarControls;
+    private bool loading_win_key_control_;
 
     /// <summary>应用快捷操作和显示器设置并负责持久化。返回错误说明；null 表示成功。</summary>
     public Func<ShortcutSettings, DisplaySettings, string?>? InteractionSettingsApply { get; set; }
@@ -42,8 +43,8 @@ public partial class SettingsWindow
         UninstallButton.IsEnabled = installationInfo.State == InstallationState.VerifiedInstalled;
         InstallationStatus.Text = installationInfo.State switch
         {
-            InstallationState.Portable => "当前程序以便携方式运行。退出后可自行删除程序文件夹；用户数据需在“备份与恢复”页单独管理。",
-            InstallationState.VerifiedInstalled => $"已核验此安装及卸载程序：{installationInfo.UninstallerPath}\n卸载程序不会删除 GlassDesk 用户数据。",
+            InstallationState.Portable => "便携版",
+            InstallationState.VerifiedInstalled => "已安装 · 卸载时保留用户数据",
             _ => "安装登记不完整或与当前程序不匹配，已停用卸载入口。" + Environment.NewLine + installationInfo.Error,
         };
     }
@@ -106,7 +107,7 @@ public partial class SettingsWindow
             DockBuiltinIconBrightnessValue.Text = appearance.DockBuiltinIconBrightness.ToString("P0", CultureInfo.CurrentCulture);
             LauncherTextBrightnessValue.Text = appearance.LauncherTextBrightness.ToString("P0", CultureInfo.CurrentCulture);
             ReduceMotionCheck.IsChecked = appearance.ReduceMotion;
-            AppearanceStatus.Text = "设置面板固定使用深色不透明背景；玻璃透明度应用到 Dock 和启动台。";
+            AppearanceStatus.Text = "";
         }
         finally { _loadingAppearanceControls = false; }
     }
@@ -156,12 +157,16 @@ public partial class SettingsWindow
         try
         {
             var current = _dataStore.Settings.Current;
+            loading_win_key_control_ = true;
+            WinKeyWindowSwitcherCheck.IsChecked =
+                current.Shortcuts.WinKeyWindowSwitcher;
+            loading_win_key_control_ = false;
             ToggleLauncherHotkeyBox.Text = HotkeyText.Format(current.Shortcuts.ToggleLauncher);
             NextPageHotkeyBox.Text = HotkeyText.Format(current.Shortcuts.NextPage);
             PreviousPageHotkeyBox.Text = HotkeyText.Format(current.Shortcuts.PreviousPage);
             ToggleDesktopIconsHotkeyBox.Text = HotkeyText.Format(current.Shortcuts.ToggleDesktopIcons);
             ToggleDockRevealLockHotkeyBox.Text = HotkeyText.Format(current.Shortcuts.ToggleDockRevealLock);
-            InteractionSettingsStatus.Text = "快捷键录制完成后自动保存并应用。";
+            InteractionSettingsStatus.Text = "";
         }
         catch (Exception ex)
         {
@@ -179,6 +184,7 @@ public partial class SettingsWindow
             || !TryReadHotkey(ToggleDockRevealLockHotkeyBox, out var dockRevealLock)) return;
         var shortcuts = new ShortcutSettings
         {
+            WinKeyWindowSwitcher = WinKeyWindowSwitcherCheck.IsChecked == true,
             ToggleLauncher = toggle, HideLauncher = new(), NextPage = next, PreviousPage = previous,
             ToggleDesktopIcons = icons, ToggleDockRevealLock = dockRevealLock,
         };
@@ -217,6 +223,12 @@ public partial class SettingsWindow
         if ((_dataStore is null || InteractionSettingsApply is null) && sender is ShortcutRecorder recorder)
             recorder.RestorePreviousBinding();
         OnApplyInteractionSettingsClick(sender ?? this, new RoutedEventArgs());
+    }
+
+    private void OnWinKeyWindowSwitcherChanged(object sender, RoutedEventArgs e)
+    {
+      if (loading_win_key_control_ || _dataStore is null) return;
+      OnApplyInteractionSettingsClick(sender, e);
     }
 
     public bool TryCaptureRegisteredHotkey(nint packedChord)
@@ -415,7 +427,7 @@ public partial class SettingsWindow
             BackupStatus.Text = result.Error ?? "恢复未能完成。";
             return;
         }
-        BackupStatus.Text = $"已从备份恢复 {result.Files.Count} 个文件。当前数据的安全副本位于：{result.SafetyCopyDirectory}。请重新启动 GlassDesk。为避免写回恢复前的内存设置，本窗口的设置编辑已停用。";
+        BackupStatus.Text = $"已从备份恢复 {result.Files.Count} 个文件。当前数据的安全副本位于：{result.SafetyCopyDirectory}。请重新启动 GlassDesk。设置编辑已暂停。";
         SettingsScroll.IsEnabled = false;
         SettingsPageList.IsEnabled = false;
         ResetPageButton.IsEnabled = false;

@@ -173,7 +173,7 @@
                 <ComboBoxItem Content="液态玻璃" />
                 <ComboBoxItem Content="磨砂玻璃" />
               </ComboBox>
-              <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="液态玻璃保留折射与边缘光泽；磨砂玻璃柔化背景，不产生折射。切换同时应用到 Dock 和启动台。" />
+              <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="选择 Dock 与启动台的背景材质。" />
               <TextBlock Margin="0,12,0,4" Text="Dock 透明度" />
               <DockPanel>
                 <TextBlock x:Name="DockTransparencyValue" DockPanel.Dock="Right" Width="48" TextAlignment="Right" />
@@ -203,29 +203,29 @@
                 <ComboBoxItem Content="实心" />
                 <ComboBoxItem Content="空心" />
               </ComboBox>
-              <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="选择 Dock 启动台九宫格的样式，切换后立即生效并保存。" />
-              <TextBlock Margin="0,12,0,4" Text="Dock 常驻图标明暗" />
+              <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="设置 Dock 中启动台按钮的图标样式。" />
+              <TextBlock Margin="0,12,0,4" Text="Dock 系统图标亮度" />
               <DockPanel>
                 <TextBlock x:Name="DockBuiltinIconBrightnessValue" DockPanel.Dock="Right" Width="48" TextAlignment="Right" />
                 <Slider x:Name="DockBuiltinIconBrightnessSlider" Minimum="0" Maximum="1" Value="1"
                         SmallChange="0.01" LargeChange="0.1" IsMoveToPointEnabled="True"
-                        AutomationProperties.Name="Dock 常驻图标明暗" ValueChanged="OnAppearanceSliderChanged" />
+                        AutomationProperties.Name="Dock 系统图标亮度" ValueChanged="OnAppearanceSliderChanged" />
               </DockPanel>
               <DockPanel Margin="0,4,0,0">
                 <TextBlock DockPanel.Dock="Left" Text="黑色" /><TextBlock Text="白色" TextAlignment="Right" />
               </DockPanel>
               <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="调节启动台、此电脑和切换桌面图标三个常驻图标的颜色。" />
-              <TextBlock Margin="0,12,0,4" Text="启动台文字明暗" />
+              <TextBlock Margin="0,12,0,4" Text="启动台文本亮度" />
               <DockPanel>
                 <TextBlock x:Name="LauncherTextBrightnessValue" DockPanel.Dock="Right" Width="48" TextAlignment="Right" />
                 <Slider x:Name="LauncherTextBrightnessSlider" Minimum="0" Maximum="1" Value="1"
                         SmallChange="0.01" LargeChange="0.1" IsMoveToPointEnabled="True"
-                        AutomationProperties.Name="启动台文字明暗" ValueChanged="OnAppearanceSliderChanged" />
+                        AutomationProperties.Name="启动台文本亮度" ValueChanged="OnAppearanceSliderChanged" />
               </DockPanel>
               <DockPanel Margin="0,4,0,0">
                 <TextBlock DockPanel.Dock="Left" Text="黑色" /><TextBlock Text="白色" TextAlignment="Right" />
               </DockPanel>
-              <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="调节启动台中的应用名称、分组名称和界面文字，拖动后立即生效并保存。" />
+              <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="调整应用名称、分组名称和界面文本的亮度。" />
               <CheckBox x:Name="ReduceMotionCheck" Margin="0,10,0,0" Content="减少动画"
                         AutomationProperties.Name="减少动画" Checked="OnAppearanceControlChanged" Unchecked="OnAppearanceControlChanged" />
               <TextBlock x:Name="AppearanceStatus" Margin="0,8,0,12" TextWrapping="Wrap" AutomationProperties.Name="外观设置状态" />
@@ -233,7 +233,7 @@
               <TextBlock x:Name="DockSectionHeading" FontSize="16" FontWeight="SemiBold" Text="Dock 设置"
                          Foreground="{Binding ForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
               <TextBlock Margin="0,10,0,4" TextWrapping="Wrap"
-                         Text="整体大小同时调整图标、间距和栏高度。外框长度可单独调节，悬停放大效果保持不变。" />
+                         Text="调整 Dock 的缩放比例、长度和显示方式。" />
               <TextBlock Margin="0,12,0,4" Text="显示方式" />
               <ComboBox x:Name="DockDisplayModeCombo" AutomationProperties.Name="Dock 显示方式"
                         SelectionChanged="OnDockControlChanged">
@@ -241,7 +241,7 @@
                 <ComboBoxItem Content="自动隐藏" />
               </ComboBox>
               <TextBlock Margin="0,4,0,8" TextWrapping="Wrap"
-                         Text="自动隐藏：鼠标移到 Dock 原来的位置时唤出，移开约 300 毫秒后收起。使用菜单、拖动图标或打开启动台时保持显示。" />
+                         Text="指针悬停时显示，离开后自动隐藏。" />
               <TextBlock Margin="0,12,0,4" Text="左侧固定图标" />
               <CheckBox x:Name="ShowLauncherEntryCheckBox" Content="显示启动台" Margin="0,4"
                         AutomationProperties.Name="Dock 显示启动台" Checked="OnDockControlChanged" Unchecked="OnDockControlChanged" />
@@ -250,18 +250,33 @@
               <CheckBox x:Name="ShowDesktopIconsEntryCheckBox" Content="显示切换桌面图标" Margin="0,4"
                         AutomationProperties.Name="Dock 显示切换桌面图标" Checked="OnDockControlChanged" Unchecked="OnDockControlChanged" />
               <TextBlock Margin="0,4,0,10" TextWrapping="Wrap" Text="按启动台、此电脑、切换桌面图标的顺序固定在左侧。切换桌面图标用于显示或隐藏桌面上的图标。" />
-              <TextBlock Margin="0,12,0,4" Text="整体大小" />
+              <TextBlock Margin="0,12,0,4" Text="窗口管理" />
+              <CheckBox x:Name="ShowRunningWindowsCheck" Margin="0,4"
+                        Content="显示未固定的运行窗口"
+                        AutomationProperties.Name="Dock 显示运行窗口"
+                        Checked="OnDockControlChanged"
+                        Unchecked="OnDockControlChanged" />
+              <TextBlock Text="任务栏模式" Margin="0,8,0,4" />
+              <ComboBox x:Name="TaskbarModeCombo"
+                        AutomationProperties.Name="任务栏模式"
+                        SelectionChanged="OnDockControlChanged">
+                <ComboBoxItem Content="Windows 原生任务栏" />
+                <ComboBoxItem Content="macOS 风格菜单栏" />
+              </ComboBox>
+              <TextBlock Margin="0,4,0,10" TextWrapping="Wrap"
+                         Text="顶部菜单栏模式下隐藏 Windows 任务栏；切换模式或退出后恢复。" />
+              <TextBlock Margin="0,12,0,4" Text="缩放比例" />
               <Slider x:Name="DockScaleSlider" Minimum="0.6666666666666666" Maximum="1.5"
                       SmallChange="0.05" LargeChange="0.1" IsMoveToPointEnabled="True"
                       AutomationProperties.Name="Dock 整体大小" ValueChanged="OnDockControlChanged" />
               <TextBlock x:Name="DockScaleReadout" Margin="0,2,0,6" FontSize="11" AutomationProperties.Name="Dock 整体大小当前值" />
-              <TextBlock Margin="0,12,0,4" Text="外框长度（DIP）" />
+              <TextBlock Margin="0,12,0,4" Text="Dock 长度（逻辑像素）" />
               <Slider x:Name="DockFrameLengthSlider" Minimum="180" Maximum="180" TickFrequency="8"
                       AutomationProperties.Name="Dock 外框长度（DIP）"
                       ValueChanged="OnDockControlChanged" />
               <TextBlock x:Name="DockFrameLengthReadout" Margin="0,2,0,6" FontSize="11"
                          AutomationProperties.Name="Dock 外框长度当前值" />
-              <Button Content="外框长度随内容自动调整" HorizontalAlignment="Left" Margin="0,2,0,4"
+              <Button Content="自适应内容宽度" HorizontalAlignment="Left" Margin="0,2,0,4"
                       AutomationProperties.Name="Dock 外框长度自动调整" Click="OnDockAutoLengthClick" />
               <TextBlock Margin="0,12,0,4" Text="位置"
                          Foreground="{Binding ForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
@@ -306,6 +321,13 @@
               <Separator Margin="0,4,0,14" />
               <TextBlock x:Name="ShortcutsSectionHeading" FontSize="16" FontWeight="SemiBold" Text="快捷操作"
                          Foreground="{Binding ForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
+              <CheckBox x:Name="WinKeyWindowSwitcherCheck" Margin="0,10,0,6"
+                        Content="单击 Win 键打开窗口切换"
+                        AutomationProperties.Name="单击 Win 键打开窗口切换"
+                        Checked="OnWinKeyWindowSwitcherChanged"
+                        Unchecked="OnWinKeyWindowSwitcherChanged" />
+              <TextBlock TextWrapping="Wrap" Margin="0,0,0,6"
+                         Text="使用方向键或鼠标选择窗口，按 Esc 关闭。" />
               <TextBlock Margin="0,6,0,10" TextWrapping="Wrap" Text="点击当前快捷键即可录制键盘组合、标点键、鼠标侧键或滚轮方向，录制后自动保存。Esc 取消，Backspace / Delete 清除绑定。" />
               <UniformGrid Columns="2">
                 <TextBlock Margin="0,7" Text="打开/关闭启动台" /><settings:ShortcutRecorder x:Name="ToggleLauncherHotkeyBox" AutomationProperties.Name="打开/关闭启动台快捷键"  RecordingCompleted="OnShortcutRecordingCompleted" />
@@ -328,7 +350,7 @@
               <Separator Margin="0,4,0,14" />
               <TextBlock x:Name="DesktopSectionHeading" FontSize="16" FontWeight="SemiBold" Text="桌面"
                          Foreground="{Binding ForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
-              <TextBlock Margin="0,8,0,10" TextWrapping="Wrap" Text="桌面图标显示状态由 Windows 管理。使用下方按钮可请求切换；不支持时按钮会停用。" />
+              <TextBlock Margin="0,8,0,10" TextWrapping="Wrap" Text="显示或隐藏 Windows 桌面图标。" />
               <StackPanel Orientation="Horizontal">
                 <Button x:Name="DesktopIconsToggleButton" Padding="10,7" Content="切换桌面图标显示"
                         AutomationProperties.Name="切换桌面图标显示" Click="OnDesktopIconsToggleClick" />
@@ -351,8 +373,8 @@
                          TextWrapping="Wrap"
                          AutomationProperties.Name="Windows 透明效果状态" />
               <TextBlock Margin="0,0,0,10" TextWrapping="Wrap">
-                <Run Text="Windows 透明效果也影响其他界面，不能让任务栏完全透明。" />
-                <Run Text="任务栏可选位置由当前 Windows 版本和功能推送决定。" />
+                <Run Text="管理 Windows 任务栏与系统透明效果。" />
+                <Run Text="" />
               </TextBlock>
               <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                 <Button Padding="10,7" Content="打开任务栏设置"
@@ -407,7 +429,7 @@
                          Foreground="{Binding SecondaryForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}"
                          Text="选择支付方式后点击“赞助”查看收款码，扫码后可在手机端自定义金额。" />
               <Separator Margin="0,4,0,14" />
-              <TextBlock x:Name="AboutSectionHeading" FontSize="16" FontWeight="SemiBold" Text="关于与运行信息"
+              <TextBlock x:Name="AboutSectionHeading" FontSize="16" FontWeight="SemiBold" Text="关于"
                          Foreground="{Binding ForegroundBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
               <TextBlock Margin="0,10,0,4" TextWrapping="Wrap"
                          Text="本软件是基于 GlassDesk 1.4.0 的非官方修改版。原作者：everlosttime。" />

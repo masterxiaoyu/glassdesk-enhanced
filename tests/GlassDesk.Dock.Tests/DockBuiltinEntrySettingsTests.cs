@@ -31,9 +31,10 @@ public sealed class DockBuiltinEntrySettingsTests
                 var names = new[] { "LauncherButton", "ThisPcButton", "DesktopIconsButton" };
                 var fields = new[] { "ShowLauncherEntry", "ShowThisPcEntry", "ShowDesktopIconsEntry" };
                 var buttons = names.Select(n => Assert.IsType<Button>(window.FindName(n))).ToArray();
-                var toolbox = Assert.IsType<Button>(window.FindName("ToolboxButton"));
+                Assert.Null(window.FindName("ToolboxButton"));
+                var trash = Assert.IsType<Button>(window.FindName("TrashButton"));
                 var row = Assert.IsType<StackPanel>(buttons[0].Parent);
-                Assert.Equal(buttons.Append(toolbox).ToArray(),
+                Assert.Equal(buttons.Append(trash).ToArray(),
                     row.Children.OfType<Button>().ToArray());
                 for (var mask = 0; mask < 8; mask++)
                 {
@@ -50,8 +51,6 @@ public sealed class DockBuiltinEntrySettingsTests
                         Assert.Equal(x, buttons[i].TranslatePoint(new Point(), row).X, 5);
                         x += 56;
                     }
-                    Assert.Equal(Visibility.Visible, toolbox.Visibility);
-                    Assert.Equal(x, toolbox.TranslatePoint(new Point(), row).X, 5);
                     Assert.Empty(data.Layouts.Dock.PinnedItemIds);
                     Assert.Equal(0, window.TileCount);
                     if ((mask & 1) == 0) Assert.Null(window.GetLauncherButtonPixelBounds());

@@ -35,14 +35,18 @@ public sealed class LaunchpadGlyph : FrameworkElement
         if (unit <= 0) return;
         if (OutlineBrush is { } outline)
         {
-            var pen = IsFilled ? null : new Pen(outline, 3.5 * unit) { LineJoin = PenLineJoin.Round };
+            var pen = IsFilled ? null : new Pen(outline, 1.6 * unit)
+            {
+                LineJoin = PenLineJoin.Round,
+            };
             for (var i = 0; i < 9; i++)
             {
-                var inset = IsFilled ? 4 : 5.75;
-                var size = IsFilled ? 12 : 8.5;
-                var radius = (IsFilled ? 3.5 : 1.8) * unit;
-                var box = new Rect((inset + i % 3 * 14) * unit, (inset + i / 3 * 14) * unit,
-                    size * unit, size * unit);
+                // 留出均匀内边距，避免粗重的空心网格挤满图标底板。
+                var inset = IsFilled ? 9 : 9.8;
+                var size = IsFilled ? 8 : 6.4;
+                var radius = 2 * unit;
+                var box = new Rect((inset + i % 3 * 11) * unit,
+                    (inset + i / 3 * 11) * unit, size * unit, size * unit);
                 dc.DrawRoundedRectangle(IsFilled ? outline : null, pen, box, radius, radius);
             }
             return;
