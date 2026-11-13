@@ -30,7 +30,10 @@ internal sealed partial class AppHost
   }
 
   private void OnTaskbarSettingsChanged(object? sender, EventArgs e)
-    => ApplyNativeTaskbar();
+  {
+    ApplyNativeTaskbar();
+    ReconcilePerformance();
+  }
 
   private void ApplyNativeTaskbar()
   {
@@ -54,6 +57,7 @@ internal sealed partial class AppHost
       top_bar_ = new TopBarWindow(_services!)
       {
         OpenSettings = ShowSettings, ExitApplication = ExitApplication,
+        PopulateApplicationMenu = AppendApplicationMenu,
         OpenTray = (anchor, forDrop) => _dock!.OpenSystemTray(anchor, forDrop),
         CloseTray = () => _dock!.CloseSystemTray(),
         IsTrayOpen = () => _dock!.IsSystemTrayOpen,
@@ -72,6 +76,7 @@ internal sealed partial class AppHost
     if (top_bar_ is not null)
     {
       top_bar_.NativeTaskbarHidden = native_taskbar_.IsHidden;
+      top_bar_.ApplyPreferences(_dockSettings.Settings);
       top_bar_.SetEnabled(_dockSettings.Settings.ShowTopBar);
     }
     // 顶部空间调整可能触发原生栏重显，收尾时重新隐藏，但不重写工作区。

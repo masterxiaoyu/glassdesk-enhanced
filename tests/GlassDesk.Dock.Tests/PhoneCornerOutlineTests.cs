@@ -111,7 +111,7 @@ public sealed class PhoneCornerOutlineTests
     }
 
     [Fact]
-    public void LargePanelsKeepAVisiblePhoneSizeShoulderWithSavedLegacySettings()
+    public void SettingsKeepCompactCornersWithSavedLegacyLauncherSettings()
     {
         StaTest.Run(() =>
         {
@@ -122,7 +122,8 @@ public sealed class PhoneCornerOutlineTests
                     BindingFlags.Instance | BindingFlags.NonPublic)!;
                 var radius = (double)resolver.Invoke(settings,
                     [new AppearanceSettings { LauncherCornerRadius = 36 }])!;
-                Assert.Equal(80, radius);
+                // 设置窗口不再继承启动台的大圆角，旧配置也使用紧凑外框。
+                Assert.Equal(20, radius);
             }
             finally
             {

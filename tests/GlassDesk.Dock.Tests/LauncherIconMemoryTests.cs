@@ -7,6 +7,54 @@ namespace GlassDesk.Dock.Tests;
 
 public sealed class LauncherIconMemoryTests
 {
+    private readonly Xunit.Abstractions.ITestOutputHelper _output;
+
+    public LauncherIconMemoryTests(Xunit.Abstractions.ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    [Fact]
+    public async Task ClearingSleepingLoaderReleasesQueuedPayloadsWithoutDecoding()
+    {
+        using var loader = (IDisposable)Activator.CreateInstance(
+            LoaderType, nonPublic: true)!;
+        LoaderType.GetMethod("SetSuspended", BindingFlags.Instance
+            | BindingFlags.NonPublic)!.Invoke(loader, [true]);
+        var payloads = new List<WeakReference>();
+        var tasks = new List<Task<BitmapImage?>>();
+        // 用真实排队闭包检查引用能否释放，不依赖工作集修剪或强制清空系统内存。
+        for (var index = 0; index < 96; index++)
+            QueuePayload(loader, index, payloads, tasks);
+        LoaderType.GetMethod("Clear", BindingFlags.Instance
+            | BindingFlags.NonPublic)!.Invoke(loader, null);
+        GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+        var retained = payloads.Count(reference => reference.IsAlive);
+        _output.WriteLine($"休眠清理后保留的 256 KiB 请求负载：{retained}/96");
+        _output.WriteLine($"已完成请求：{tasks.Count(task => task.IsCompleted)}/96");
+        Assert.InRange(retained, 0, 1);
+        Assert.All(tasks, task => Assert.True(task.IsCompletedSuccessfully));
+        Assert.All(await Task.WhenAll(tasks), image => Assert.Null(image));
+        LoaderType.GetMethod("SetSuspended", BindingFlags.Instance
+            | BindingFlags.NonPublic)!.Invoke(loader, [false]);
+        Assert.NotNull(await Load(loader, "wake", () => Image(32, 32))
+            .WaitAsync(TimeSpan.FromSeconds(3)));
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static void QueuePayload(object loader, int index,
+        List<WeakReference> payloads, List<Task<BitmapImage?>> tasks)
+    {
+        var payload = new byte[256 * 1024];
+        payloads.Add(new WeakReference(payload));
+        tasks.Add(Load(loader, $"pending-{index}", () =>
+        {
+            GC.KeepAlive(payload);
+            throw new InvalidOperationException("已清理请求不应继续解码。");
+        }));
+    }
+
     private static Type LoaderType => Assembly.Load("GlassDesk.Launcher").GetType("GlassDesk.Launcher.LauncherIconLoader", true)!;
     private static Task<BitmapImage?> Load(object loader, string key, Func<BitmapImage?> resolve) =>
         (Task<BitmapImage?>)LoaderType.GetMethod("LoadAsync", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(loader, [key, resolve])!;

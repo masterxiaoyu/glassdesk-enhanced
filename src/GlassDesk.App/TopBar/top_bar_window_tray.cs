@@ -24,23 +24,38 @@ public partial class TopBarWindow
     }
   }
 
+  private System.Windows.Threading.DispatcherOperation? tray_refresh_;
+
   private void OnTrayChanged(object? sender, EventArgs e)
-    => Dispatcher.BeginInvoke(RefreshTrayItems);
+  {
+    // 全屏休眠期间不重建隐藏图标；一轮外壳消息只提交一次界面刷新。
+    if (!IsVisible || tray_refresh_?.Status
+        == System.Windows.Threading.DispatcherOperationStatus.Pending) return;
+    tray_refresh_ = Dispatcher.BeginInvoke(RefreshTrayItems);
+  }
 
   public void RefreshTrayItems()
   {
     if (tray_dragging_ || PinnedTrayHost.Children.OfType<TrayIconButton>()
         .Any(button => button.IsMouseCaptured)) return;
-    PinnedTrayHost.Children.Clear();
+    var visible = new List<SystemTrayItem>();
     foreach (var id in services_.Layouts.Dock.TopBarItemIds)
     {
       var item = system_tray_?.Items.FirstOrDefault(entry =>
         entry.PersistentId == id && !entry.Hidden
           && !SystemStatusIcons.IsDedicated(entry));
       if (item is null) continue;
+      visible.Add(item);
+    }
+    // 其他后台应用的状态更新不应反复分配常驻图标的 WPF 位图。
+    if (PinnedTrayHost.Children.OfType<TrayIconButton>()
+        .Select(button => button.Item).SequenceEqual(visible)) return;
+    PinnedTrayHost.Children.Clear();
+    foreach (var item in visible)
+    {
       var button = new TrayIconButton(item, BarHeight)
       {
-        Tag = id,
+        Tag = item.PersistentId,
       };
       button.DragStarted += (_, _) => tray_dragging_ = true;
       button.Click += (_, _) => RefreshTrayItems();

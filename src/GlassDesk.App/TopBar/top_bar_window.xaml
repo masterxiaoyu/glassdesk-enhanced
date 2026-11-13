@@ -200,6 +200,7 @@
     </Style>
   </Window.Resources>
   <Border x:Name="Surface" Background="#B8242426"
+          MouseLeftButtonDown="OnBarMouseDown"
           BorderBrush="#10FFFFFF" BorderThickness="0,0,0,0.5">
     <Grid Margin="10,0">
       <Grid.ColumnDefinitions>
@@ -209,14 +210,15 @@
       </Grid.ColumnDefinitions>
       <StackPanel Orientation="Horizontal">
         <Button x:Name="StartButton" Click="OnStart"
-                ToolTip="开始（右键打开 GlassDesk 菜单）"
-                MouseRightButtonUp="OnSystemMenu"
+                ToolTip="开始（右键打开 Windows 快捷菜单）"
+                PreviewMouseRightButtonUp="OnStartContextMenu"
                 AutomationProperties.Name="Windows 开始菜单">
           <Path Fill="White" Width="15" Height="15" Stretch="Uniform"
                 Data="M0,0 H6 V6 H0 Z M8,0 H14 V6 H8 Z
                       M0,8 H6 V14 H0 Z M8,8 H14 V14 H8 Z" />
         </Button>
-        <Button Click="OnApplicationMenu" ToolTip="当前应用">
+        <Button Click="OnApplicationMenu" ToolTip="当前应用"
+                PreviewMouseRightButtonUp="OnGlassDeskContextMenu">
           <TextBlock x:Name="ApplicationName" Text="GlassDesk"
                      FontWeight="SemiBold" MaxWidth="200"
                      TextTrimming="CharacterEllipsis" />
@@ -242,6 +244,7 @@
                 Data="{StaticResource OfflineIcon}" />
         </Button>
         <Button x:Name="VolumeButton" ToolTip="声音" Click="OnVolume"
+                PreviewMouseWheel="OnVolumeWheel"
                 AutomationProperties.Name="顶部栏音量">
           <Path Style="{StaticResource StatusGlyph}"
                 Data="{StaticResource SoundIcon}" />

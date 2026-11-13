@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -17,6 +18,42 @@ namespace GlassDesk.Dock.Tests;
 
 public sealed class DesktopImportWindowTests
 {
+    [Fact]
+    public void SearchKeepsHiddenSelectionsAndSelectsOnlyMatchingItems()
+    {
+        StaTest.Run(() =>
+        {
+            var dialog = new DesktopImportWindow(new DesktopScanResult([
+                new DesktopItem("C:\\demo\\Browser.lnk", "浏览器", false, true),
+                new DesktopItem("C:\\demo\\Notes.lnk", "记事本", false, true),
+                new DesktopItem("C:\\tools\\Tool.lnk", "工具", false, false)
+            ], []));
+            try
+            {
+                var search = (TextBox)dialog.FindName("DesktopSearchBox");
+                var list = (ListBox)dialog.FindName("DesktopItemsList");
+                var selectAll = (Button)dialog.FindName("SelectAllButton");
+                search.Text = "浏览";
+                Assert.Single(list.Items.Cast<object>());
+                selectAll.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                Assert.Equal(["C:\\demo\\Browser.lnk"], dialog.SelectedPaths);
+                search.Text = "TOOLS";
+                Assert.Single(list.Items.Cast<object>());
+                selectAll.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                Assert.Equal(2, dialog.SelectedPaths.Count);
+                search.Text = "不存在的项目";
+                Assert.Empty(list.Items.Cast<object>());
+                Assert.Equal(2, dialog.SelectedPaths.Count);
+                ((Button)dialog.FindName("ClearSelectionButton"))
+                    .RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                search.Text = "";
+                Assert.Equal(3, list.Items.Count);
+                Assert.Empty(dialog.SelectedPaths);
+            }
+            finally { dialog.Close(); }
+        });
+    }
+
     [Fact]
     public void ImportPickerPreservesShortcutSourcesForTheirNamesArgumentsAndCustomIcons()
     {
@@ -152,6 +189,18 @@ public sealed class DesktopImportWindowTests
                 ((Button)dialog.FindName("SelectAllButton")).RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
                 Assert.Equal(60, dialog.SelectedPaths.Count);
                 content.UpdateLayout();
+                var scroll = Assert.IsType<ScrollViewer>(list.Template.FindName(
+                    "PART_ScrollViewer", list));
+                Assert.True(scroll.ScrollableHeight > 0);
+                var wheel = new MouseWheelEventArgs(Mouse.PrimaryDevice, 0, -120)
+                {
+                    RoutedEvent = Mouse.PreviewMouseWheelEvent,
+                    Source = list.Items[0]
+                };
+                list.RaiseEvent(wheel);
+                content.UpdateLayout();
+                Assert.True(wheel.Handled);
+                Assert.True(scroll.VerticalOffset > 0);
 
                 var previewRoot = Environment.GetEnvironmentVariable("GLASSDESK_DESKTOP_IMPORT_PREVIEW");
                 if (!string.IsNullOrWhiteSpace(previewRoot))

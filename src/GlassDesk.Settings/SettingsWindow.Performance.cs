@@ -37,6 +37,8 @@ public partial class SettingsWindow
             return;
         }
         PerformanceSettingsChanged?.Invoke(this, EventArgs.Empty);
-        PerformanceSettingsStatus.Text = "已保存并应用。窗口化游戏可在托盘手动启用游戏休眠。";
+        PerformanceSettingsStatus.Text = current.Performance.AutoSuspendWhenFullscreen
+            ? "已启用全屏休眠，退出全屏后自动恢复。"
+            : "已关闭自动全屏休眠，仍可通过托盘手动休眠。";
     }
 }

@@ -3,11 +3,11 @@
 给 Windows 换一套桌面布局：常用应用放进悬浮 Dock，
 同类软件拖到一起收纳，网络、音量和电量留在顶部菜单栏。
 
-**Windows 11 x64 · 免费使用 · 当前预览版 1.6.0-preview.10**
+**Windows 11 x64 · 免费使用 · 当前公开预览版 1.6.0-preview.13**
 
-[下载安装版](https://github.com/masterxiaoyu/glassdesk-enhanced/releases/download/v1.6.0-preview.10/GlassDesk-1.6.0-preview.10-win-x64-Setup.exe) ·
-[下载便携版](https://github.com/masterxiaoyu/glassdesk-enhanced/releases/download/v1.6.0-preview.10/GlassDesk-1.6.0-preview.10-win-x64-portable.zip) ·
-[版本说明](https://github.com/masterxiaoyu/glassdesk-enhanced/releases/tag/v1.6.0-preview.10)
+[下载安装版](https://github.com/masterxiaoyu/glassdesk-enhanced/releases/download/v1.6.0-preview.13/GlassDesk-1.6.0-preview.13-win-x64-Setup.exe) ·
+[下载便携版](https://github.com/masterxiaoyu/glassdesk-enhanced/releases/download/v1.6.0-preview.13/GlassDesk-1.6.0-preview.13-win-x64-portable.zip) ·
+[版本说明](https://github.com/masterxiaoyu/glassdesk-enhanced/releases/tag/v1.6.0-preview.13)
 
 
 
@@ -19,16 +19,21 @@
 - **直接拖叠收纳**：把一个应用拖到另一个应用上方，停留后松手即可收纳。
   点击展开，同类工具放在一起。
 - **启动台**：集中浏览与搜索应用，按需调整网格行列和文字亮度。
+  从桌面批量添加时，可按名称或路径筛选并保留已选项目。
 - **顶部菜单栏**：查看当前应用与系统状态，分别打开网络、音量、电池、
   日历和控制中心。应用菜单由当前软件提供。
 - **两种任务栏模式**：可选 macOS 风格菜单栏，也可保留 Windows 任务栏。
   切换模式或正常退出后，恢复对应的桌面工作区。
 - **可选窗口切换快捷键**：开启后，单独按下并松开 Win 键即可选择窗口。
   Win+D、Win+E 等组合键继续使用。
+- **全屏休眠**：全屏应用运行时收起 Dock 和菜单栏，暂停背景处理，
+  退出全屏后恢复；隐藏启动台后释放不再使用的页面和图标资源。
 
 接通电源时，电池图标显示闪电；使用电池时显示电量条。
 有线连接与 Wi-Fi 共用一个网络入口，有线连接优先显示。
 常用后台图标可以从收纳面板拖到菜单栏常驻，再按需要拖回。
+Windows 图标右键保留系统快捷菜单；右键 GlassDesk 名称或后台图标，
+可管理开机自启、检测更新和查看关于。
 
 ## 开始使用
 

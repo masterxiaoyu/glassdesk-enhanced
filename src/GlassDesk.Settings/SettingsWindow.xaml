@@ -4,7 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:GlassDesk.UI.Controls;assembly=GlassDesk.UI"
     xmlns:settings="clr-namespace:GlassDesk.Settings"
-    xmlns:sys="clr-namespace:System;assembly=System.Runtime"
     Title="GlassDesk 设置"
     AutomationProperties.Name="GlassDesk 设置中心"
     ShowInTaskbar="True"
@@ -12,98 +11,6 @@
     Loaded="OnSettingsWindowLoaded"
     Width="760"
     Height="560">
-
-  <controls:GlassWindow.Resources>
-    <sys:Double x:Key="{x:Static SystemParameters.VerticalScrollBarWidthKey}">12</sys:Double>
-    <sys:Double x:Key="{x:Static SystemParameters.HorizontalScrollBarHeightKey}">12</sys:Double>
-    <Style x:Key="ScrollPageButton" TargetType="RepeatButton">
-      <Setter Property="Focusable" Value="False" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="RepeatButton">
-            <Border Background="Transparent" />
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
-    <Style x:Key="SlimScrollThumb" TargetType="Thumb">
-      <Setter Property="MinHeight" Value="24" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Thumb">
-            <Grid Background="Transparent">
-              <Border x:Name="Grip" Width="6" HorizontalAlignment="Center"
-                      CornerRadius="3" Background="{TemplateBinding Background}" Opacity="0.5" />
-            </Grid>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Grip" Property="Opacity" Value="0.75" />
-              </Trigger>
-              <Trigger Property="IsDragging" Value="True">
-                <Setter TargetName="Grip" Property="Opacity" Value="1" />
-              </Trigger>
-              <DataTrigger Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType=ScrollBar}}" Value="Horizontal">
-                <Setter TargetName="Grip" Property="Width" Value="Auto" />
-                <Setter TargetName="Grip" Property="Height" Value="6" />
-                <Setter TargetName="Grip" Property="HorizontalAlignment" Value="Stretch" />
-                <Setter TargetName="Grip" Property="VerticalAlignment" Value="Center" />
-              </DataTrigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding Orientation, RelativeSource={RelativeSource AncestorType=ScrollBar}}" Value="Horizontal">
-          <Setter Property="MinHeight" Value="0" />
-          <Setter Property="MinWidth" Value="24" />
-        </DataTrigger>
-      </Style.Triggers>
-    </Style>
-    <Style TargetType="ScrollBar">
-      <Setter Property="Width" Value="12" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Foreground" Value="{Binding AccentBrush, RelativeSource={RelativeSource AncestorType=Window}}" />
-      <Setter Property="SnapsToDevicePixels" Value="True" />
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="ScrollBar">
-            <Grid Background="Transparent">
-              <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" IsDirectionReversed="True"
-                     Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
-                     ViewportSize="{TemplateBinding ViewportSize}"
-                     Value="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
-                <Track.DecreaseRepeatButton>
-                  <RepeatButton x:Name="PageBefore" Command="{x:Static ScrollBar.PageUpCommand}" Style="{StaticResource ScrollPageButton}" />
-                </Track.DecreaseRepeatButton>
-                <Track.Thumb>
-                  <Thumb Style="{StaticResource SlimScrollThumb}" Background="{TemplateBinding Foreground}" />
-                </Track.Thumb>
-                <Track.IncreaseRepeatButton>
-                  <RepeatButton x:Name="PageAfter" Command="{x:Static ScrollBar.PageDownCommand}" Style="{StaticResource ScrollPageButton}" />
-                </Track.IncreaseRepeatButton>
-              </Track>
-            </Grid>
-            <ControlTemplate.Triggers>
-              <Trigger Property="Orientation" Value="Horizontal">
-                <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
-                <Setter TargetName="PageBefore" Property="Command" Value="{x:Static ScrollBar.PageLeftCommand}" />
-                <Setter TargetName="PageAfter" Property="Command" Value="{x:Static ScrollBar.PageRightCommand}" />
-              </Trigger>
-              <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.3" />
-              </Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-      <Style.Triggers>
-        <Trigger Property="Orientation" Value="Horizontal">
-          <Setter Property="Width" Value="Auto" />
-          <Setter Property="Height" Value="12" />
-        </Trigger>
-      </Style.Triggers>
-    </Style>
-  </controls:GlassWindow.Resources>
 
   <Border
       Background="{Binding PanelBackgroundBrush, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -265,6 +172,16 @@
               </ComboBox>
               <TextBlock Margin="0,4,0,10" TextWrapping="Wrap"
                          Text="顶部菜单栏模式下隐藏 Windows 任务栏；切换模式或退出后恢复。" />
+              <TextBlock Text="菜单栏操作" Margin="0,8,0,4" />
+              <CheckBox x:Name="TopBarApplicationMenusCheck" Margin="0,4"
+                        Content="显示当前应用的菜单"
+                        Checked="OnDockControlChanged" Unchecked="OnDockControlChanged" />
+              <CheckBox x:Name="TopBarScrollVolumeCheck" Margin="0,4"
+                        Content="在音量图标上滚动调节音量"
+                        Checked="OnDockControlChanged" Unchecked="OnDockControlChanged" />
+              <CheckBox x:Name="TopBarDoubleClickDesktopCheck" Margin="0,4"
+                        Content="双击菜单栏空白区域显示桌面"
+                        Checked="OnDockControlChanged" Unchecked="OnDockControlChanged" />
               <TextBlock Margin="0,12,0,4" Text="缩放比例" />
               <Slider x:Name="DockScaleSlider" Minimum="0.6666666666666666" Maximum="1.5"
                       SmallChange="0.05" LargeChange="0.1" IsMoveToPointEnabled="True"
@@ -344,7 +261,7 @@
               <CheckBox x:Name="AutoSuspendWhenFullscreenCheck" Margin="0,10,0,8" Content="全屏应用运行时自动休眠"
                         AutomationProperties.Name="全屏应用运行时自动休眠" IsEnabled="False"
                         Checked="OnPerformanceControlChanged" Unchecked="OnPerformanceControlChanged" />
-              <TextBlock TextWrapping="Wrap" Text="游戏和视频全屏时收起 Dock 并暂停背景处理。可用键盘快捷键或托盘临时打开启动台；窗口化游戏可在托盘手动启用游戏休眠。" />
+              <TextBlock TextWrapping="Wrap" Text="应用全屏时收起 Dock 和菜单栏，暂停背景采集与窗口扫描。退出全屏后自动恢复，也可通过托盘手动休眠。" />
               <TextBlock x:Name="PerformanceSettingsStatus" Margin="0,8,0,14" TextWrapping="Wrap"
                          AutomationProperties.Name="性能设置状态" />
               <Separator Margin="0,4,0,14" />

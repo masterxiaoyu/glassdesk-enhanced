@@ -369,6 +369,7 @@ internal sealed partial class AppHost : IDisposable
             ToggleLauncherFromDock(_launcher, source, ShowLauncher));
         _dock.ToggleDesktopIcons = () => ExecuteInteraction(GlassDesk.Core.Input.InputAction.ToggleDesktopIcons);
         _dock.OpenSettings = ShowSettings;
+        _dock.PopulateApplicationMenu = AppendApplicationMenu;
         _dock.ExitApplication = ExitApplication;
         _dock.RestoreNativeTaskbar = RestoreNativeTaskbar;
         _launcher.AttachServices(_services!, _loadReport?.LibraryStatus != LoadStatus.Unrecoverable);
@@ -495,14 +496,12 @@ internal sealed partial class AppHost : IDisposable
 
         menu.Items.Add(CreateMenuItem("打开启动台", ShowLauncher));
         menu.Items.Add(CreateMenuItem("隐藏启动台", HideLauncher));
-        var gameSleep = new MenuItem { Header = "游戏休眠", IsCheckable = true, IsChecked = RuntimeManualGameSleep };
+        var gameSleep = new MenuItem { Header = "全屏休眠", IsCheckable = true, IsChecked = RuntimeManualGameSleep };
         gameSleep.Click += (_, _) => SetManualGameSleep(gameSleep.IsChecked);
         menu.Items.Add(gameSleep);
         menu.Items.Add(new Separator());
-        menu.Items.Add(CreateMenuItem("设置…", ShowSettings));
         menu.Items.Add(CreateMenuItem("打开数据文件夹", OpenDataFolder));
-        menu.Items.Add(new Separator());
-        menu.Items.Add(CreateMenuItem("退出", ExitApplication));
+        AppendApplicationMenu(menu.Items);
 
         // 托盘菜单只有在所属窗口先到前台之后，才会在点击外部时收起；
         // 外壳不会主动激活我们那个只收消息的窗口。
@@ -516,6 +515,48 @@ internal sealed partial class AppHost : IDisposable
         var item = new MenuItem { Header = header };
         item.Click += (_, _) => action();
         return item;
+    }
+
+    // Dock、菜单栏和托盘复用同一组产品入口，状态均从实际系统配置读取。
+    private void AppendApplicationMenu(ItemCollection items)
+    {
+        items.Add(CreateMenuItem("设置…", ShowSettings));
+        var executable = Environment.ProcessPath ?? string.Empty;
+        var registration = new StartupRegistration();
+        var status = registration.Query(executable);
+        var startup = new MenuItem
+        {
+            Header = "开机自启", IsCheckable = true,
+            IsChecked = status.State == StartupRegistrationState.Owned,
+            IsEnabled = status.State is StartupRegistrationState.Owned
+                or StartupRegistrationState.Missing,
+            ToolTip = status.State == StartupRegistrationState.OtherTarget
+                ? "启动项已关联其他副本，请在设置中查看。" : status.Error,
+        };
+        startup.Click += (_, _) =>
+        {
+            var result = registration.SetEnabled(executable, startup.IsChecked);
+            _settings?.RefreshStartupRegistration();
+            if (!result.Succeeded)
+                ReportInteractionError("无法更改开机自启：" + result.Error);
+        };
+        items.Add(startup);
+        items.Add(CreateMenuItem("检测更新…", () =>
+        {
+            // 手动检查的状态显示在关于页，离线或无更新时也有明确反馈。
+            ShowSettings();
+            _settings?.ShowAboutPage();
+            _ = CheckUpdatesAsync(manual: true);
+        }));
+        items.Add(CreateMenuItem("关于 GlassDesk…", () =>
+        {
+            ShowSettings();
+            _settings?.ShowAboutPage();
+        }));
+        items.Add(new Separator());
+        if (_dockSettings?.Settings.ShowTopBar == true)
+            items.Add(CreateMenuItem("恢复 Windows 原生任务栏", RestoreNativeTaskbar));
+        items.Add(CreateMenuItem("退出 GlassDesk", ExitApplication));
     }
 
     private void OpenDataFolder()

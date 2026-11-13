@@ -13,6 +13,49 @@ namespace GlassDesk.Dock.Tests;
 public class DockSettingsWindowTests
 {
     [Fact]
+    public void MenuBarPreferencesPersistWhenChangingOtherDockOptions()
+    {
+        StaTest.Run(() =>
+        {
+            var root = Path.Combine(Path.GetTempPath(),
+                "GlassDesk-menu-settings-" + Guid.NewGuid().ToString("N"));
+            var data = new GlassDeskDataStore(new AppPaths(root));
+            data.LoadAll();
+            var window = new SettingsWindow();
+            try
+            {
+                window.AttachDataStore(data, null);
+                Assert.IsType<CheckBox>(window.FindName(
+                    "TopBarScrollVolumeCheck")).IsChecked = true;
+                Assert.IsType<CheckBox>(window.FindName(
+                    "TopBarDoubleClickDesktopCheck")).IsChecked = true;
+                Assert.IsType<CheckBox>(window.FindName(
+                    "TopBarApplicationMenusCheck")).IsChecked = false;
+                Assert.IsType<ComboBox>(window.FindName(
+                    "TaskbarModeCombo")).SelectedIndex = 1;
+                Assert.IsType<Slider>(window.FindName("DockScaleSlider"))
+                    .Value = 1.1;
+                var reloaded = new SettingsStore(data.Paths.SettingsFile);
+                reloaded.Load();
+                var dock = reloaded.Current.Dock;
+                Assert.True(dock.TopBarScrollVolume);
+                Assert.True(dock.TopBarDoubleClickDesktop);
+                Assert.False(dock.TopBarShowApplicationMenus);
+                Assert.True(dock.ShowTopBar);
+                var reset = SettingsPageEditor.ResetPage(reloaded.Current, "Dock");
+                Assert.False(reset.Dock.TopBarScrollVolume);
+                Assert.False(reset.Dock.TopBarDoubleClickDesktop);
+                Assert.True(reset.Dock.TopBarShowApplicationMenus);
+            }
+            finally
+            {
+                window.Close();
+                Directory.Delete(root, true);
+            }
+        });
+    }
+
+    [Fact]
     public void RefreshInstallationStatusReplacesStaleMismatchAndEnablesUninstall()
     {
         StaTest.Run(() =>

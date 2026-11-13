@@ -35,6 +35,11 @@ public sealed class DockSettings
     /// <summary>任务栏模式：true 使用顶部栏，false 使用 Windows 原生栏。</summary>
     public bool ShowTopBar { get; set; }
 
+    /// <summary>菜单栏的可选鼠标操作，默认不更改原有点击行为。</summary>
+    public bool TopBarScrollVolume { get; set; }
+    public bool TopBarDoubleClickDesktop { get; set; }
+    public bool TopBarShowApplicationMenus { get; set; } = true;
+
     /// <summary>旧配置兼容字段；加载保存时与 ShowTopBar 同步。</summary>
     public bool HideNativeTaskbar { get; set; }
 

@@ -7,8 +7,8 @@ GlassDesk 支持 Windows 11 x64（Build 22000 及以上）。
 
 | 文件 | 适合的使用方式 |
 | --- | --- |
-| `GlassDesk-1.6.0-preview.10-win-x64-Setup.exe` | 安装到当前用户目录，后续原位升级 |
-| `GlassDesk-1.6.0-preview.10-win-x64-portable.zip` | 解压后运行，便于单独存放或迁移 |
+| `GlassDesk-1.6.0-preview.13-win-x64-Setup.exe` | 安装到当前用户目录，后续原位升级 |
+| `GlassDesk-1.6.0-preview.13-win-x64-portable.zip` | 解压后运行，便于单独存放或迁移 |
 
 请从本仓库的 [Releases](https://github.com/masterxiaoyu/glassdesk-enhanced/releases)
 下载，并按同页提供的 SHA-256 核对文件。
@@ -62,8 +62,8 @@ GlassDesk 支持 Windows 11 x64（Build 22000 及以上）。
 ```powershell
 $env:GLASSDESK_PACKAGE_STAGE = (Resolve-Path artifacts/publish).Path
 ISCC.exe /DAppIdValue=GlassDesk.Independent `
-  /DProductVersion=1.6.0-preview.10 /DFileVersion=1.6.0.0 `
-  /DPackageBaseName=GlassDesk-1.6.0-preview.10-win-x64 `
+  /DProductVersion=1.6.0-preview.13 /DFileVersion=1.6.0.0 `
+  /DPackageBaseName=GlassDesk-1.6.0-preview.13-win-x64 `
   /Oartifacts packaging/GlassDesk.iss
 ```
 

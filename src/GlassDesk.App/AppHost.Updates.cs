@@ -19,7 +19,7 @@ internal sealed partial class AppHost
 
     internal static string ProductDisplayVersion => typeof(AppHost).Assembly
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-        .InformationalVersion.Split('+')[0] ?? "1.6.0-preview.10";
+        .InformationalVersion.Split('+')[0] ?? "1.6.0-preview.13";
 
     internal static Version ProductVersion => Version.TryParse(
         ProductDisplayVersion.Split('-')[0], out var version)

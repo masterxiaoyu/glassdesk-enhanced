@@ -96,11 +96,11 @@ public partial class SettingsWindow : GlassWindow
         private set => SetValue(PlannedPagesProperty, value);
     }
 
-    /// <summary>设置中心沿用启动台的圆角半径，与其面板尺寸保持一致。</summary>
+    /// <summary>设置窗口使用紧凑圆角，避免沿用启动台的大曲率裁切正文。</summary>
     protected override double ResolveCornerRadius(AppearanceSettings appearance)
     {
         ArgumentNullException.ThrowIfNull(appearance);
-        return Math.Max(80, appearance.LauncherCornerRadius);
+        return 20;
     }
 
     /// <summary>把数据存储交给窗口，让它能报告数据存放的位置。</summary>
@@ -168,6 +168,17 @@ public partial class SettingsWindow : GlassWindow
 
     public void PositionOnPrimary() => CenterOnPrimaryWorkArea();
 
+    /// <summary>外部入口复用设置页，加载后再定位，避免首次打开定位失效。</summary>
+    public void ShowAboutPage()
+    {
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,
+            new Action(() =>
+            {
+                SettingsPageList.SelectedIndex = PlannedPages.Count - 1;
+                ScrollToSection(AboutSectionHeading);
+            }));
+    }
+
     private void OnAutostartClick(object sender, RoutedEventArgs e)
     {
         if (_loadingStartupRegistration || _startupRegistration is null) return;
@@ -196,6 +207,9 @@ public partial class SettingsWindow : GlassWindow
             ShowDesktopIconsEntryCheckBox.IsChecked = dock.ShowDesktopIconsEntry;
             ShowRunningWindowsCheck.IsChecked = dock.ShowRunningWindows;
             TaskbarModeCombo.SelectedIndex = dock.ShowTopBar ? 1 : 0;
+            TopBarScrollVolumeCheck.IsChecked = dock.TopBarScrollVolume;
+            TopBarDoubleClickDesktopCheck.IsChecked = dock.TopBarDoubleClickDesktop;
+            TopBarApplicationMenusCheck.IsChecked = dock.TopBarShowApplicationMenus;
             DockScaleSlider.Value = dock.SizeScale;
             DockScaleReadout.Text = $"{dock.SizeScale:P0} · 图标 {48 * dock.SizeScale:0} DIP";
             DockPlacementCombo.SelectedIndex = (int)dock.Placement;
@@ -367,6 +381,9 @@ public partial class SettingsWindow : GlassWindow
             ShowSystemControls = previousDock.ShowSystemControls,
             ShowTopBar = TaskbarModeCombo.SelectedIndex == 1,
             HideNativeTaskbar = TaskbarModeCombo.SelectedIndex == 1,
+            TopBarScrollVolume = TopBarScrollVolumeCheck.IsChecked == true,
+            TopBarDoubleClickDesktop = TopBarDoubleClickDesktopCheck.IsChecked == true,
+            TopBarShowApplicationMenus = TopBarApplicationMenusCheck.IsChecked == true,
             IconSize = DockSettings.FixedIconSize,
             IconSpacing = DockSettings.FixedIconSpacing,
             MagnificationPeak = DockSettings.FixedMagnificationPeak,

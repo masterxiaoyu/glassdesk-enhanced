@@ -15,6 +15,7 @@ public sealed class TrayIconButton : Button
   private int clicks_;
   private bool pressed_;
   private readonly SystemTrayItem item_;
+  public SystemTrayItem Item => item_;
   public event EventHandler? RightClicked;
   public event EventHandler? DragStarted;
   public event EventHandler? DragFinished;

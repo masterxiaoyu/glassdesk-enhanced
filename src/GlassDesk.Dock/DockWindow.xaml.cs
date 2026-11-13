@@ -46,6 +46,7 @@ public partial class DockWindow : GlassWindow
     public Action? ToggleDesktopIcons { get; set; }
     /// <summary>通过 Dock 右键菜单打开设置，作为托盘入口的替代。</summary>
     public Action? OpenSettings { get; set; }
+    public Action<ItemCollection>? PopulateApplicationMenu { get; set; }
     public Action? RestoreNativeTaskbar { get; set; }
     public Action? ExitApplication { get; set; }
     private System.Windows.Threading.DispatcherTimer? _failureNoticeTimer;
@@ -955,11 +956,13 @@ public partial class DockWindow : GlassWindow
         menu.Opened += (_, _) => menuHandle =
             (PresentationSource.FromVisual(menu) as
                 System.Windows.Interop.HwndSource)?.Handle ?? 0;
-        _ = menu.Items.Add(MenuItem("设置…", () => OpenSettings?.Invoke()));
-        if (RestoreNativeTaskbar is not null)
+        if (PopulateApplicationMenu is not null)
+            PopulateApplicationMenu(menu.Items);
+        else _ = menu.Items.Add(MenuItem("设置…", () => OpenSettings?.Invoke()));
+        if (PopulateApplicationMenu is null && RestoreNativeTaskbar is not null)
             _ = menu.Items.Add(MenuItem("恢复 Windows 原生任务栏",
                 RestoreNativeTaskbar));
-        if (ExitApplication is not null)
+        if (PopulateApplicationMenu is null && ExitApplication is not null)
             _ = menu.Items.Add(MenuItem("退出 GlassDesk", ExitApplication));
         menu.Closed += (_, _) =>
         {

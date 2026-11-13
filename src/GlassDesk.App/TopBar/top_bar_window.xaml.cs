@@ -6,8 +6,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
+using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using GlassDesk.AppServices;
+using GlassDesk.Core.Models.Settings;
 using GlassDesk.Platform;
 using GlassDesk.Platform.Displays;
 using GlassDesk.Platform.Shell;
@@ -24,8 +27,17 @@ public partial class TopBarWindow : Window
   private TopBarReservation? reservation_;
   private nint handle_, application_window_;
   private bool menu_open_;
+  private DockSettings settings_ = new();
+
+  public void ApplyPreferences(DockSettings settings)
+  {
+    settings_ = settings;
+    application_window_ = 0;
+    if (IsVisible) RefreshApplication();
+  }
 
   public Action? OpenSettings { get; set; }
+  public Action<ItemCollection>? PopulateApplicationMenu { get; set; }
   public Action? ExitApplication { get; set; }
   public Action<FrameworkElement, bool>? OpenTray { get; set; }
   public Action? CloseTray { get; set; }
@@ -140,7 +152,8 @@ public partial class TopBarWindow : Window
     ApplicationName.ToolTip = "当前前台应用：" + identity.Title;
     ApplicationMenus.Children.Clear();
     var menu = NativeApplicationMenu.ForWindow(foreground);
-    var entries = NativeApplicationMenu.Read(menu);
+    var entries = settings_.TopBarShowApplicationMenus
+      ? NativeApplicationMenu.Read(menu) : [];
     for (var index = 0; index < entries.Count; index++)
     {
       var entry = entries[index];
@@ -209,23 +222,48 @@ public partial class TopBarWindow : Window
     menu.IsOpen = true;
   }
 
-  private void OnSystemMenu(object sender, RoutedEventArgs e)
+  private void OnStartContextMenu(object sender, MouseButtonEventArgs e)
   {
+    // 开始图标保留系统快捷菜单，阻止事件继续打开 GlassDesk 右键菜单。
+    e.Handled = true;
+    CloseStatusPanels();
+    WindowsShellCommands.OpenPowerUserMenu();
+  }
+
+  private void OnGlassDeskContextMenu(object sender, MouseButtonEventArgs e)
+  {
+    // 产品菜单只属于 GlassDesk 名称，空白区和其他应用不显示此菜单。
+    if (e.Handled || ApplicationName.Text != "GlassDesk") return;
     CloseStatusPanels();
     var menu = new ContextMenu();
-    void add(string title, Action action)
-    {
-      var item = new MenuItem { Header = title };
-      item.Click += (_, _) => action();
-      menu.Items.Add(item);
-    }
-    add("GlassDesk 设置…", () => OpenSettings?.Invoke());
-    menu.Items.Add(new Separator());
-    add("Windows 开始菜单", () => WindowsShellCommands.OpenStart());
-    add("显示桌面", () => DesktopCommands.ShowDesktop());
-    menu.Items.Add(new Separator());
-    add("退出 GlassDesk", () => ExitApplication?.Invoke());
+    PopulateApplicationMenu?.Invoke(menu.Items);
+    if (menu.Items.Count == 0) return;
     ShowMenu((FrameworkElement)sender, menu);
+    e.Handled = true;
+  }
+
+  private void OnBarMouseDown(object sender, MouseButtonEventArgs e)
+  {
+    if (e.ClickCount != 2
+        || !settings_.TopBarDoubleClickDesktop) return;
+    // 双击按钮仍执行按钮本身的操作，仅空白处响应显示桌面。
+    for (var node = e.OriginalSource as Visual;
+         node is not null; node = VisualTreeHelper.GetParent(node) as Visual)
+      if (node is ButtonBase) return;
+    DesktopCommands.ShowDesktop();
+    e.Handled = true;
+  }
+
+  private void OnVolumeWheel(object sender, MouseWheelEventArgs e)
+  {
+    if (!settings_.TopBarScrollVolume) return;
+    using var volume = SystemVolume.Open();
+    if (volume is null || !volume.TryRead(out var level, out _)) return;
+    var next = Math.Clamp(level + e.Delta / 120f * .02f, 0, 1);
+    if (!volume.SetLevel(next)) return;
+    if (VolumePopup.IsOpen) VolumeSlider.Value = next * 100;
+    VolumeButton.ToolTip = $"音量 {next:P0}";
+    e.Handled = true;
   }
 
   private void OnApplicationMenu(object sender, RoutedEventArgs e)

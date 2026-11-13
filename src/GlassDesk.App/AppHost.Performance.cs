@@ -6,7 +6,8 @@ namespace GlassDesk.App;
 
 internal sealed partial class AppHost
 {
-    private static readonly TimeSpan LauncherWarmRetention = TimeSpan.FromSeconds(30);
+    // 隐藏后短暂保留以便连续开合，随后释放大纹理和页面图标。
+    private static readonly TimeSpan LauncherWarmRetention = TimeSpan.FromSeconds(8);
     private PerformanceCoordinator? _performance;
     private PerformanceFullscreenMonitor? _performanceFullscreen;
     private DispatcherTimer? _performanceDeadlineTimer;

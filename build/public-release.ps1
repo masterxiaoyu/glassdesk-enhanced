@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [string]$Version = '1.6.0-preview.10',
+  [string]$Version = '1.6.0-preview.13',
   [string]$FileVersion = '1.6.0.0',
   [Parameter(Mandatory = $true)][string]$DotnetPath,
   [Parameter(Mandatory = $true)][string]$InnoCompilerPath

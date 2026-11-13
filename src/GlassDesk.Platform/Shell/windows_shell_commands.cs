@@ -15,6 +15,9 @@ public static class WindowsShellCommands
   public static bool OpenQuickSettings() => SendWindowsKey(0x41);
   public static bool OpenNotifications() => SendWindowsKey(0x4E);
 
+  /// <summary>原生开始按钮右键菜单，内容与管理员入口由 Windows 管理。</summary>
+  public static bool OpenPowerUserMenu() => SendWindowsKey(0x58);
+
   /// <summary>保持窗口缩略图界面展开，松开按键后仍可选择窗口。</summary>
   public static bool OpenWindowSwitcher() => SendKeyboardInputs(
     (0x11, 0), (0x12, 0), (0x09, 0),

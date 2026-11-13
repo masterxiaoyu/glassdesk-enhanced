@@ -15,10 +15,17 @@ namespace GlassDesk.Launcher;
     Justification = "WPF window resources are released in Closed, matching GlassWindow and LauncherWindow.")]
 public sealed class DesktopImportWindow : GlassWindow
 {
+    protected override bool UseOpaquePanel => true;
+    protected override double ResolveCornerRadius(
+        GlassDesk.Core.Models.Settings.AppearanceSettings appearance) => 18;
     private readonly List<(DesktopItem Item, CheckBox Choice, Image Icon)> _rows = [];
     private readonly TextBlock _selectionCount = new() { VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _add = new() { Content = "添加所选", MinWidth = 100, IsDefault = true, IsEnabled = false };
     private LauncherIconLoader? _icons;
+    private readonly ListBox _list = new()
+    {
+        HorizontalContentAlignment = HorizontalAlignment.Stretch
+    };
     private bool _changingSelection, _closed;
 
     public IReadOnlyList<string> SelectedPaths => _rows.Where(row => row.Choice.IsChecked == true)
@@ -40,6 +47,17 @@ public sealed class DesktopImportWindow : GlassWindow
         heading.Children.Add(new TextBlock { Text = Title, FontSize = 20, FontWeight = FontWeights.SemiBold });
         heading.Children.Add(new TextBlock { Text = "勾选要添加的桌面文件、程序、快捷方式或文件夹。",
             TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 14), Opacity = .8 });
+        var search = new TextBox {
+            ToolTip = "按名称或路径搜索桌面项目" };
+        AutomationProperties.SetName(search, "搜索桌面项目");
+        RegisterName("DesktopSearchBox", search);
+        var searchHost = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+        var hint = new TextBlock { Text = "搜索桌面项目…", Opacity = .5,
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            IsHitTestVisible = false };
+        searchHost.Children.Add(search); searchHost.Children.Add(hint);
+        heading.Children.Add(searchHost);
         var selection = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
         DockPanel.SetDock(_selectionCount, Dock.Right);
         selection.Children.Add(_selectionCount);
@@ -66,9 +84,19 @@ public sealed class DesktopImportWindow : GlassWindow
         actions.Children.Add(cancel); actions.Children.Add(_add); footer.Children.Add(actions);
         DockPanel.SetDock(footer, Dock.Bottom); panel.Children.Add(footer);
 
-        var list = new ListBox { HorizontalContentAlignment = HorizontalAlignment.Stretch };
+        var list = _list;
         AutomationProperties.SetName(list, "桌面项目");
         ScrollViewer.SetHorizontalScrollBarVisibility(list, ScrollBarVisibility.Disabled);
+        ScrollViewer.SetVerticalScrollBarVisibility(list, ScrollBarVisibility.Auto);
+        // 在列表内消费滚轮，避免复选框及父窗口把滚轮交给启动台翻页。
+        list.PreviewMouseWheel += (_, args) =>
+        {
+            if (list.Template.FindName("PART_ScrollViewer", list)
+                is not ScrollViewer scroll || scroll.ScrollableHeight <= 0) return;
+            scroll.ScrollToVerticalOffset(scroll.VerticalOffset
+                - args.Delta / 120d * 3);
+            args.Handled = true;
+        };
         RegisterName("DesktopItemsList", list);
         foreach (var item in scan.Items)
         {
@@ -79,29 +107,54 @@ public sealed class DesktopImportWindow : GlassWindow
                 + (item.IsDirectory ? " · 文件夹" : ""), FontSize = 11, Opacity = .65, Margin = new Thickness(0, 3, 0, 0) });
             var row = new DockPanel();
             DockPanel.SetDock(icon, Dock.Left); row.Children.Add(icon); row.Children.Add(label);
-            var choice = new CheckBox { Content = row, ToolTip = item.Path,
+            var choice = new CheckBox { Content = row, ToolTip = item.Path, Tag = item,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(4, 5, 4, 5) };
             AutomationProperties.SetName(choice, item.DisplayName);
             choice.Checked += (_, _) => UpdateSelection(); choice.Unchecked += (_, _) => UpdateSelection();
             _rows.Add((item, choice, icon)); list.Items.Add(choice);
         }
-        if (_rows.Count == 0)
-            panel.Children.Add(new TextBlock { Text = "桌面上没有可添加的文件或快捷方式。",
+        var listHost = new Grid();
+        listHost.Children.Add(list);
+        var empty = new TextBlock { Text = "桌面上没有可添加的文件或快捷方式。",
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
-                TextWrapping = TextWrapping.Wrap, Opacity = .75 });
-        else panel.Children.Add(list);
+                TextWrapping = TextWrapping.Wrap, Opacity = .75,
+                Visibility = _rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed };
+        listHost.Children.Add(empty); panel.Children.Add(listHost);
+        search.TextChanged += (_, _) =>
+        {
+            var query = search.Text.Trim();
+            hint.Visibility = query.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            // 只过滤显示，不重建复选框；隐藏条目的勾选状态继续保留。
+            list.Items.Filter = value => value is CheckBox { Tag: DesktopItem item }
+                && (item.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    || item.Path.Contains(query, StringComparison.OrdinalIgnoreCase));
+            empty.Text = _rows.Count == 0 ? "桌面上没有可添加的文件或快捷方式。"
+                : "没有匹配的桌面项目。";
+            empty.Visibility = list.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            UpdateSelection();
+        };
         var surface = new Grid();
-        surface.Children.Add(new LiquidGlassSurface { UseLauncherTransparency = true });
+        // 导入对话框使用静态深色底，避免文字叠在启动台上，也省去重复背景采集。
+        surface.Children.Add(new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(30, 31, 35))
+        });
         surface.Children.Add(panel); Content = surface;
         UpdateSelection();
-        Loaded += (_, _) => { list.Focus(); LoadIcons(); };
+        Loaded += (_, _) => { search.Focus(); LoadIcons(); };
         Closed += (_, _) => { _closed = true; _icons?.Dispose(); };
     }
 
     private void SelectAll(bool selected)
     {
         _changingSelection = true;
-        try { foreach (var row in _rows) row.Choice.IsChecked = selected; }
+        try
+        {
+            // 全选仅作用于搜索结果；取消全选同时清除隐藏条目的选择。
+            foreach (var row in _rows)
+                if (!selected || _list.Items.Contains(row.Choice))
+                    row.Choice.IsChecked = selected;
+        }
         finally { _changingSelection = false; UpdateSelection(); }
     }
 
@@ -109,7 +162,9 @@ public sealed class DesktopImportWindow : GlassWindow
     {
         if (_changingSelection) return;
         var count = _rows.Count(row => row.Choice.IsChecked == true);
-        _selectionCount.Text = $"已选 {count} / {_rows.Count} 项";
+        _selectionCount.Text = _list.Items.Count == _rows.Count
+            ? $"已选 {count} / {_rows.Count} 项"
+            : $"已选 {count} 项 · 找到 {_list.Items.Count} 项";
         _add.IsEnabled = count > 0;
     }
 

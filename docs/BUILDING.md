@@ -41,7 +41,7 @@ $env:GLASSDESK_DOTNET = $env:DOTNET_HOST_PATH
 ```
 
 编译成功不代表所有 Windows 版本、显示器和显卡组合均已验证。
-当前版本的验收范围见 [更新说明](../packaging/RELEASE-NOTES-1.6.0-preview.10.md)。
+当前版本的验收范围见 [更新说明](../packaging/RELEASE-NOTES-1.6.0-preview.13.md)。
 
 ## 生成分发包
 
@@ -55,11 +55,11 @@ pwsh -File build/public-release.ps1 `
 
 脚本从新的发布目录打包，不包含用户数据、测试证书或实验通知组件。
 
-当前公开版本为 `1.6.0-preview.10`，安装程序与便携版应使用一致版本。
+当前公开版本为 `1.6.0-preview.13`，安装程序与便携版应使用一致版本。
 发布包不包含实验通知组件、测试证书、签名私钥或个人 `Data`。
 
 ```powershell
-dotnet publish src/GlassDesk.App/GlassDesk.App.csproj -c Release -r win-x64 --self-contained true -p:Version=1.6.0-preview.10 -p:FileVersion=1.6.0.0 -p:InformationalVersion=1.6.0-preview.10 -p:IncludeSourceRevisionInInformationalVersion=false -o artifacts/publish
+dotnet publish src/GlassDesk.App/GlassDesk.App.csproj -c Release -r win-x64 --self-contained true -p:Version=1.6.0-preview.13 -p:FileVersion=1.6.0.0 -p:InformationalVersion=1.6.0-preview.13 -p:IncludeSourceRevisionInInformationalVersion=false -o artifacts/publish
 ```
 
 在干净暂存目录中准备发布文件，并保留以下资料：
@@ -73,7 +73,7 @@ dotnet publish src/GlassDesk.App/GlassDesk.App.csproj -c Release -r win-x64 --se
 证书及私钥。便携版文件名为：
 
 ```text
-GlassDesk-1.6.0-preview.10-win-x64-portable.zip
+GlassDesk-1.6.0-preview.13-win-x64-portable.zip
 ```
 
 安装版沿用 `GlassDesk.Independent` 安装标识与原安装路径，

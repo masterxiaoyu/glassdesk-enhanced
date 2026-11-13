@@ -111,6 +111,10 @@ public sealed class MenuBarBehaviorTests
         Assert.Equal([second.PersistentId, first.PersistentId],
           data.Layouts.Dock.TopBarItemIds);
         Assert.Equal(2, host.Children.Count);
+        var originalButtons = host.Children.OfType<TrayIconButton>().ToArray();
+        bar.RefreshTrayItems();
+        Assert.Same(originalButtons[0], host.Children[0]);
+        Assert.Same(originalButtons[1], host.Children[1]);
         var loaded = new LayoutStore(data.Paths.DockLayoutFile,
           data.Paths.LauncherLayoutFile);
         loaded.LoadDock();

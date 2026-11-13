@@ -45,8 +45,11 @@ $checks = @()
 $passed = $false
 $oldFileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $OldPayload 'GlassDesk.dll')).FileVersion
 $newFileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $NewPayload 'GlassDesk.dll')).FileVersion
-$oldVersion = ([version]$oldFileVersion).ToString(3)
-$newVersion = ([version]$newFileVersion).ToString(3)
+# 预览版可以共用 Windows 文件版本，安装包名必须使用各自的产品版本。
+$oldVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo(
+    (Join-Path $OldPayload 'GlassDesk.dll')).ProductVersion.Split('+')[0]
+$newVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo(
+    (Join-Path $NewPayload 'GlassDesk.dll')).ProductVersion.Split('+')[0]
 function RunInstaller([string]$File, [string]$Log) {
     $info = [Diagnostics.ProcessStartInfo]::new($File)
     $info.UseShellExecute = $false

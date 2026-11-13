@@ -59,7 +59,16 @@ internal sealed class LauncherIconLoader : IDisposable
     }
     internal void Clear()
     {
-        lock (_gate) { _cache.Clear(); _lru.Clear(); _decodedBytes = 0; }
+        lock (_gate)
+        {
+            // 深度休眠同时退掉未解码请求，否则挂起队列仍引用旧页面与图标。
+            foreach (var entry in _cache.Values)
+                entry.Completion.TrySetResult(null);
+            while (_queue.TryTake(out var work))
+                work.Entry.Completion.TrySetResult(null);
+            _cache.Clear(); _lru.Clear(); _decodedBytes = 0;
+            Monitor.PulseAll(_gate);
+        }
     }
     private void Touch(Entry entry)
     {
@@ -82,8 +91,10 @@ internal sealed class LauncherIconLoader : IDisposable
         {
             lock (_gate)
             {
-                while (_suspended && !_disposed) Monitor.Wait(_gate);
-                if (_disposed) { work.Entry.Completion.TrySetResult(null); continue; }
+                while (_suspended && !_disposed
+                    && !work.Entry.Completion.Task.IsCompleted) Monitor.Wait(_gate);
+                if (_disposed || work.Entry.Completion.Task.IsCompleted)
+                { work.Entry.Completion.TrySetResult(null); continue; }
             }
             BitmapImage? image = null;
             try { image = work.Resolve(); }
