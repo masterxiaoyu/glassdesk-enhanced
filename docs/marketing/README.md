@@ -1,27 +1,17 @@
 # GlassDesk 图文素材
 
-`images/01-desktop.png` 至 `05-settings.png` 是 1080×1920 竖版图片，
-按文件顺序发布即可。`github-hero.png` 是仓库首页的横版封面。
+当前使用 images-v2/01-desktop.png 至 05-settings.png，按序发布。
+新版采用用户确认的蓝色完整桌面构图，每张均同时展示顶部菜单栏与底部 Dock。
+五张分别介绍整体桌面、应用收纳、启动台、状态面板和设置。
+
+这些是参考软件实际控件、使用 imagegen 生成的宣传效果图，
+并非用户升级后的实机截图，图片均标注“界面效果示意”。
+应用列表、音量、日期为展示数据；没有使用个人桌面、聊天、路径或通知。
+示例应用图标归各自权利人所有，不代表合作或内置分发这些软件。
+
 发布正文和口播见 [DOUYIN-COPY.md](DOUYIN-COPY.md)。
+提示词和参考素材说明见 [IMAGEGEN-V2.json](IMAGEGEN-V2.json)。
+原生控件参考由 marketing_preview_tests.cs 使用隔离演示数据导出。
 
-图片使用当前代码导出的真实 WPF 控件，应用列表、日期、音量是展示数据。
-没有采集个人桌面、聊天、路径或通知。背景与场景框架由离线网页排版，
-Dock 使用程序自带的兼容底板，并非桌面实时折射截图。
-应用图标只作使用示例，不代表合作、授权背书或内置分发这些软件。
-图片没有使用云端生图，不重绘软件按钮或编造未实现的功能。
-
-## 重新导出
-
-在可交互 Windows 会话中构建 Dock 测试项目，再显式执行素材导出：
-
-```powershell
-$env:GLASSDESK_MARKETING_EXPORT = '1'
-dotnet vstest tests/GlassDesk.Dock.Tests/bin/Release/net10.0-windows10.0.26100.0/GlassDesk.Dock.Tests.dll '/Framework:.NETCoreApp,Version=v10.0' '/TestCaseFilter:FullyQualifiedName~MarketingPreviewTests'
-Remove-Item Env:GLASSDESK_MARKETING_EXPORT
-node tools/marketing/render-posters.cjs
-```
-
-导出测试只使用隔离演示数据。请先退出正在运行的 GlassDesk，
-并使用与项目一致的 .NET 10 主机。
-排版脚本使用本机 Chrome；可通过 `GLASSDESK_CHROME` 指定已有浏览器路径，
-不会下载浏览器或字体。图片完成后应检查文字、裁切和功能描述，再发布。
+images/ 和 tools/marketing/render-posters.cjs 保留旧版离线排版，
+不再作为当前宣传图。新版未重新生成安装程序或变更软件功能。
