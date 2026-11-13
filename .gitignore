@@ -31,3 +31,6 @@ tmp/
 # Evidence logs are referenced by the delivery reports, so they must be committable.
 !docs/evidence/*.log
 !docs/evidence/**/*.log
+
+# Promotional materials stay local.
+/docs/marketing/

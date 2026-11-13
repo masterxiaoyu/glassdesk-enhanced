@@ -9,9 +9,8 @@
 [下载便携版](https://github.com/masterxiaoyu/glassdesk-enhanced/releases/download/v1.6.0-preview.10/GlassDesk-1.6.0-preview.10-win-x64-portable.zip) ·
 [版本说明](https://github.com/masterxiaoyu/glassdesk-enhanced/releases/tag/v1.6.0-preview.10)
 
-![GlassDesk 悬浮 Dock 与顶部菜单栏](docs/marketing/images-v2/01-desktop.png)
 
-图片为参考软件界面生成的效果示意，并非实机截图；应用与排列可自行调整。
+
 
 ## 常用应用，放在手边
 
